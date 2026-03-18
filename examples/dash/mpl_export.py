@@ -18,7 +18,7 @@ fig.update_layout(title="All-types example")
 # --- renderer covering all supported field types ---
 
 def full_renderer(
-    fig_data,
+    _fig_data,
     # str
     title: str = "My Plot",
     # int / float
@@ -37,8 +37,8 @@ def full_renderer(
     # tuple[T, ...]
     xlim: tuple[float, float] | None = None,
 ):
-    x = fig_data["data"][0]["x"]
-    y = fig_data["data"][0]["y"]
+    x = _fig_data["data"][0]["x"]
+    y = _fig_data["data"][0]["y"]
 
     fig, ax = plt.subplots(dpi=dpi)
     ax.scatter(x, y, alpha=alpha, marker=marker_style)
