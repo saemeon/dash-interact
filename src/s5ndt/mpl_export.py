@@ -145,6 +145,8 @@ def mpl_export_button(
         ],
     )
 
+    _extra_stores = [dcc.Store(id=snapshot_store_id)] if _renderer_accepts_img else []
+
     body = html.Div(
         style={"display": "flex", "gap": "24px"},
         children=[
@@ -178,7 +180,7 @@ def mpl_export_button(
                 max_intervals=1,
                 disabled=True,
             ),
-            dcc.Store(id=snapshot_store_id),
+            *_extra_stores,
         ],
     )
 
@@ -192,48 +194,6 @@ def mpl_export_button(
     config.register_populate_callback(wizard.open_input)
     config.register_restore_callback(Input(restore_id, "n_clicks"))
 
-    # Capture the browser-rendered Plotly figure as a base64 PNG.
-    # Guard: !n_intervals skips the arm_interval reset-to-0 side-effect.
-    _js_head = f"""
-        async function(n_clicks, n_intervals) {{
-            if (!n_clicks && !n_intervals) {{
-                return window.dash_clientside.no_update;
-            }}
-            const container = document.getElementById('{graph_id}');
-            if (!container) return window.dash_clientside.no_update;
-            const graphDiv = container.querySelector('.js-plotly-plot') || container;
-    """
-    if strip_title:
-        _capture_js = (
-            _js_head
-            + """
-            const layout = JSON.parse(JSON.stringify(graphDiv.layout || {}));
-            layout.title = {text: ''};
-            layout.margin = {...(layout.margin || {}), t: 20};
-            const tmp = document.createElement('div');
-            tmp.style.cssText = 'position:fixed;left:-9999px;width:'
-                + graphDiv.offsetWidth + 'px;height:' + graphDiv.offsetHeight + 'px';
-            document.body.appendChild(tmp);
-            await Plotly.newPlot(tmp, graphDiv.data, layout);
-            const img = await Plotly.toImage(tmp, {format: 'png'});
-            document.body.removeChild(tmp);
-            return img;
-        }"""
-        )
-    else:
-        _capture_js = (
-            _js_head
-            + "return await Plotly.toImage(graphDiv, {format: 'png'});\n        }"
-        )
-
-    dash.clientside_callback(
-        _capture_js,
-        Output(snapshot_store_id, "data"),
-        Input(generate_id, "n_clicks"),
-        Input(interval_id, "n_intervals"),
-        prevent_initial_call=True,
-    )
-
     @dash.callback(
         Output(interval_id, "disabled"),
         Output(interval_id, "n_intervals"),
@@ -243,54 +203,141 @@ def mpl_export_button(
     def arm_interval(is_open):
         return (not is_open, 0)
 
-    @dash.callback(
-        Output(preview_id, "src"),
-        Input(snapshot_store_id, "data"),
-        State(graph_id, "figure"),
-        *config.states,
-        prevent_initial_call=True,
-    )
-    def generate_preview(_img_b64, _fig_data, *field_values):
-        if not _img_b64:
-            return dash.no_update
-        kwargs = config.build_kwargs(field_values)
-        if _renderer_accepts_img:
+    if _renderer_accepts_img:
+        # Capture the browser-rendered Plotly figure as a base64 PNG.
+        # Guard: !n_intervals skips the arm_interval reset-to-0 side-effect.
+        _js_head = f"""
+            async function(n_clicks, n_intervals) {{
+                if (!n_clicks && !n_intervals) {{
+                    return window.dash_clientside.no_update;
+                }}
+                const container = document.getElementById('{graph_id}');
+                if (!container) return window.dash_clientside.no_update;
+                const graphDiv = container.querySelector('.js-plotly-plot')
+                    || container;
+        """
+        if strip_title:
+            _capture_js = (
+                _js_head
+                + """
+                const layout = JSON.parse(JSON.stringify(graphDiv.layout || {}));
+                layout.title = {text: ''};
+                layout.margin = {...(layout.margin || {}), t: 20};
+                const tmp = document.createElement('div');
+                tmp.style.cssText = 'position:fixed;left:-9999px;width:'
+                    + graphDiv.offsetWidth + 'px;height:'
+                    + graphDiv.offsetHeight + 'px';
+                document.body.appendChild(tmp);
+                await Plotly.newPlot(tmp, graphDiv.data, layout);
+                const img = await Plotly.toImage(tmp, {format: 'png'});
+                document.body.removeChild(tmp);
+                return img;
+            }"""
+            )
+        else:
+            _capture_js = (
+                _js_head
+                + "return await Plotly.toImage(graphDiv, {format: 'png'});"
+                + "\n            }"
+            )
+
+        dash.clientside_callback(
+            _capture_js,
+            Output(snapshot_store_id, "data"),
+            Input(generate_id, "n_clicks"),
+            Input(interval_id, "n_intervals"),
+            prevent_initial_call=True,
+        )
+
+        @dash.callback(
+            Output(preview_id, "src"),
+            Input(snapshot_store_id, "data"),
+            State(graph_id, "figure"),
+            *config.states,
+            prevent_initial_call=True,
+        )
+        def generate_preview(_img_b64, _fig_data, *field_values):
+            if not _img_b64:
+                return dash.no_update
+            kwargs = config.build_kwargs(field_values)
             kwargs["_img_b64"] = _img_b64
-        fig = renderer(_fig_data, **kwargs)
-        return _fig_to_src(fig)
+            fig = renderer(_fig_data, **kwargs)
+            return _fig_to_src(fig)
 
-    @dash.callback(
-        Output(preview_id, "src", allow_duplicate=True),
-        *[Input(s.component_id, s.component_property) for s in config.states],
-        State(autogenerate_id, "value"),
-        State(snapshot_store_id, "data"),
-        State(graph_id, "figure"),
-        prevent_initial_call=True,
-    )
-    def autogenerate_preview(*args):
-        *field_values, autogen, _img_b64, _fig_data = args
-        if not autogen:
-            return dash.no_update
-        kwargs = config.build_kwargs(tuple(field_values))
-        if _renderer_accepts_img:
+        @dash.callback(
+            Output(preview_id, "src", allow_duplicate=True),
+            *[Input(s.component_id, s.component_property) for s in config.states],
+            State(autogenerate_id, "value"),
+            State(snapshot_store_id, "data"),
+            State(graph_id, "figure"),
+            prevent_initial_call=True,
+        )
+        def autogenerate_preview(*args):
+            *field_values, autogen, _img_b64, _fig_data = args
+            if not autogen:
+                return dash.no_update
+            kwargs = config.build_kwargs(tuple(field_values))
             kwargs["_img_b64"] = _img_b64 or ""
-        fig = renderer(_fig_data, **kwargs)
-        return _fig_to_src(fig)
+            fig = renderer(_fig_data, **kwargs)
+            return _fig_to_src(fig)
 
-    @dash.callback(
-        Output(download_id, "data"),
-        Input(f"{download_id}_btn", "n_clicks"),
-        State(snapshot_store_id, "data"),
-        State(graph_id, "figure"),
-        *config.states,
-        prevent_initial_call=True,
-    )
-    def download_figure(n_clicks, _img_b64, _fig_data, *field_values):
-        kwargs = config.build_kwargs(field_values)
-        if _renderer_accepts_img:
+        @dash.callback(
+            Output(download_id, "data"),
+            Input(f"{download_id}_btn", "n_clicks"),
+            State(snapshot_store_id, "data"),
+            State(graph_id, "figure"),
+            *config.states,
+            prevent_initial_call=True,
+        )
+        def download_figure(n_clicks, _img_b64, _fig_data, *field_values):
+            kwargs = config.build_kwargs(field_values)
             kwargs["_img_b64"] = _img_b64 or ""
-        fig = renderer(_fig_data, **kwargs)
-        return dcc.send_bytes(_fig_to_bytes(fig), "figure.png")
+            fig = renderer(_fig_data, **kwargs)
+            return dcc.send_bytes(_fig_to_bytes(fig), "figure.png")
+
+    else:
+        # No browser capture needed — renderer works directly from figure data.
+        @dash.callback(
+            Output(preview_id, "src"),
+            Input(generate_id, "n_clicks"),
+            Input(interval_id, "n_intervals"),
+            State(graph_id, "figure"),
+            *config.states,
+            prevent_initial_call=True,
+        )
+        def generate_preview(n_clicks, n_intervals, _fig_data, *field_values):
+            if not n_clicks and not n_intervals:
+                return dash.no_update
+            kwargs = config.build_kwargs(field_values)
+            fig = renderer(_fig_data, **kwargs)
+            return _fig_to_src(fig)
+
+        @dash.callback(
+            Output(preview_id, "src", allow_duplicate=True),
+            *[Input(s.component_id, s.component_property) for s in config.states],
+            State(autogenerate_id, "value"),
+            State(graph_id, "figure"),
+            prevent_initial_call=True,
+        )
+        def autogenerate_preview(*args):
+            *field_values, autogen, _fig_data = args
+            if not autogen:
+                return dash.no_update
+            kwargs = config.build_kwargs(tuple(field_values))
+            fig = renderer(_fig_data, **kwargs)
+            return _fig_to_src(fig)
+
+        @dash.callback(
+            Output(download_id, "data"),
+            Input(f"{download_id}_btn", "n_clicks"),
+            State(graph_id, "figure"),
+            *config.states,
+            prevent_initial_call=True,
+        )
+        def download_figure(n_clicks, _fig_data, *field_values):
+            kwargs = config.build_kwargs(field_values)
+            fig = renderer(_fig_data, **kwargs)
+            return dcc.send_bytes(_fig_to_bytes(fig), "figure.png")
 
     return wizard.div
 
