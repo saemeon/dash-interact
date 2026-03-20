@@ -505,6 +505,7 @@ def build_config(
     _show_docstring: bool = True,
     _exclude: list[str] | None = None,
     _include: list[str] | None = None,
+    _initial_values: dict | object | None = None,
     **kwargs: FieldSpec | FieldHook | tuple,
 ) -> Config:
     """Introspect *fn*'s signature and return a :class:`Config`.
@@ -573,6 +574,16 @@ def build_config(
         Parameter names to skip entirely.
     _include :
         If given, only these parameters are shown, in the order listed.
+    _initial_values :
+        Pre-fill field defaults from a ``dict`` or any object with matching
+        attributes.  Supports both key lookup (``dict``) and ``getattr`` fallback
+        (dataclass, Pydantic model, plain object).  Fields not present in
+        *_initial_values* keep their signature defaults.
+
+        Example::
+
+            cfg = build_config("edit", my_fn, _initial_values={"dpi": 300})
+            cfg = build_config("edit", my_fn, _initial_values=current_settings)
 
     Returns
     -------
@@ -642,6 +653,14 @@ def build_config(
     external_specs = {**normalized, **(_field_specs or {})}
 
     fields = _get_fields(fn, exclude=_exclude, include=_include)
+
+    if _initial_values is not None:
+        for f in fields:
+            if isinstance(_initial_values, dict):
+                if f.name in _initial_values:
+                    f.default = _initial_values[f.name]
+            elif hasattr(_initial_values, f.name):
+                f.default = getattr(_initial_values, f.name)
 
     for f in fields:
         f.spec = _resolve_spec(f, external_specs, styles, class_names)
@@ -885,6 +904,7 @@ _RESERVED = frozenset(
         "_show_docstring",
         "_exclude",
         "_include",
+        "_initial_values",
     }
 )
 
