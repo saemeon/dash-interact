@@ -442,13 +442,14 @@ def build_config(
     config_id: str,
     fn: Callable,
     *,
-    field_specs: dict[str, FieldSpec | FieldHook] | None = None,
-    styles: dict[str, dict] | None = None,
-    class_names: dict[str, str] | None = None,
-    cols: int = 1,
-    show_docstring: bool = True,
-    exclude: list[str] | None = None,
-    include: list[str] | None = None,
+    _field_specs: dict[str, FieldSpec | FieldHook] | None = None,
+    _styles: dict[str, dict] | None = None,
+    _class_names: dict[str, str] | None = None,
+    _cols: int = 1,
+    _show_docstring: bool = True,
+    _exclude: list[str] | None = None,
+    _include: list[str] | None = None,
+    **kwargs: FieldSpec | FieldHook | tuple,
 ) -> Config:
     """Introspect *fn*'s signature and return a :class:`Config`.
 
@@ -459,13 +460,25 @@ def build_config(
     fn :
         Callable whose parameters define the fields.
         Parameters whose names start with ``_`` are skipped.
-    field_specs :
-        Per-field customisation, keyed by parameter name.
-        Values may be a :class:`FieldSpec` or a bare :class:`FieldHook`
-        (treated as ``FieldSpec(hook=hook)``).
-        Takes precedence over ``styles`` / ``class_names``, but is
-        overridden by ``Annotated[T, FieldSpec(...)]`` in the signature.
-    styles :
+    **kwargs :
+        Per-field customisation passed as keyword arguments named after the
+        function parameter.  Values may be a :class:`FieldSpec`, a bare
+        :class:`FieldHook` (treated as ``FieldSpec(hook=hook)``), or a tuple
+        shorthand:
+
+        * ``(min, max)`` → ``FieldSpec(min=min, max=max)``
+        * ``(min, max, step)`` → ``FieldSpec(min=min, max=max, step=step)``
+
+        Example::
+
+            cfg = build_config("render", fn, dpi=(10, 300, 10), show_grid=FieldSpec(label="Grid"))
+
+        Overridden by ``Annotated[T, FieldSpec(...)]`` in the signature.
+        Use ``_field_specs`` when you need to build the dict programmatically.
+    _field_specs :
+        Dict-based alternative to ``**kwargs``.  Takes precedence over
+        ``**kwargs`` for the same field name.
+    _styles :
         Type-level CSS dicts, keyed by slot name.  Applied to every field
         of that type unless the field has its own ``FieldSpec.style``.
 
@@ -481,17 +494,17 @@ def build_config(
         * ``"path"`` → ``dcc.Input(type="text")`` (coerced via ``pathlib.Path``)
         * ``"list"`` / ``"tuple"`` → ``dcc.Input(type="text")``
         * ``"label"`` → ``html.Label`` on every field label
-    class_names :
-        Same as *styles* but for CSS class names.
-    cols :
+    _class_names :
+        Same as *_styles* but for CSS class names.
+    _cols :
         Number of columns in the form grid. Default ``1`` (vertical stack).
         Use ``FieldSpec.col_span`` on individual fields to span columns.
-    show_docstring :
+    _show_docstring :
         Prepend the function's docstring as a paragraph above the fields.
         Default ``True``.
-    exclude :
+    _exclude :
         Parameter names to skip entirely.
-    include :
+    _include :
         If given, only these parameters are shown, in the order listed.
 
     Returns
@@ -512,11 +525,28 @@ def build_config(
         )
     _registered_config_ids.add(config_id)
 
-    styles = styles or {}
-    class_names = class_names or {}
-    external_specs = field_specs or {}
+    styles = _styles or {}
+    class_names = _class_names or {}
 
-    fields = _get_fields(fn, exclude=exclude, include=include)
+    # Normalize **kwargs tuple shorthands and merge with _field_specs.
+    # _field_specs wins over **kwargs for the same field name.
+    normalized: dict[str, FieldSpec | FieldHook] = {}
+    for name, val in kwargs.items():
+        if isinstance(val, tuple):
+            if len(val) == 2:
+                normalized[name] = FieldSpec(min=val[0], max=val[1])
+            elif len(val) == 3:
+                normalized[name] = FieldSpec(min=val[0], max=val[1], step=val[2])
+            else:
+                raise ValueError(
+                    f"build_config kwarg {name!r}: tuple must be (min, max) or "
+                    f"(min, max, step), got {val!r}"
+                )
+        else:
+            normalized[name] = val
+    external_specs = {**normalized, **(_field_specs or {})}
+
+    fields = _get_fields(fn, exclude=_exclude, include=_include)
 
     for f in fields:
         f.spec = _resolve_spec(f, external_specs, styles, class_names)
@@ -527,7 +557,7 @@ def build_config(
     label_class_name = class_names.get("label", "")
 
     children: list = []
-    if show_docstring:
+    if _show_docstring:
         doc = inspect.getdoc(fn)
         if doc:
             children.append(
@@ -558,10 +588,10 @@ def build_config(
             )
         children.append(child)
 
-    if cols > 1:
+    if _cols > 1:
         outer_style: dict = {
             "display": "grid",
-            "gridTemplateColumns": f"repeat({cols}, 1fr)",
+            "gridTemplateColumns": f"repeat({_cols}, 1fr)",
             "gap": "8px",
         }
     else:
