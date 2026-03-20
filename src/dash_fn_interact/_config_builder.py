@@ -103,18 +103,18 @@ class _Field:
 # --- Config ---
 
 
-class Config:
+class Config(html.Div):
     def __init__(
         self,
-        div: html.Div,
+        children: list,
         states: list[State],
         fields: list[_Field],
         config_id: str,
     ):
-        self.div = div
-        self.states = states
-        self._fields = fields
-        self._config_id = config_id
+        super().__init__(children=children)
+        object.__setattr__(self, "states", states)
+        object.__setattr__(self, "_fields", fields)
+        object.__setattr__(self, "_config_id", config_id)
 
     @property
     def dirty_states(self) -> list[State]:
@@ -217,14 +217,20 @@ class Config:
 
     def __getattr__(self, name: str) -> FieldRef:
         # Only called when normal attribute lookup fails.
-        for f in self._fields:
+        # Use object.__getattribute__ to avoid infinite recursion.
+        try:
+            fields = object.__getattribute__(self, "_fields")
+            config_id = object.__getattribute__(self, "_config_id")
+        except AttributeError as exc:
+            raise AttributeError(f"Config has no field {name!r}") from exc
+        for f in fields:
             if f.name == name:
                 prop = (
                     f.spec.component_prop
                     if f.spec and f.spec.component
                     else "date" if f.type in ("date", "datetime") else "value"
                 )
-                return FieldRef(field_id(self._config_id, name), prop)
+                return FieldRef(field_id(config_id, name), prop)
         raise AttributeError(f"Config has no field {name!r}")
 
     def build_kwargs(self, values: tuple) -> dict:
@@ -571,7 +577,7 @@ def build_config(
     Returns
     -------
     Config
-        ``.div`` — ``html.Div`` with labeled inputs ready to embed anywhere.
+        The ``Config`` itself is an ``html.Div`` — embed it directly in the layout.
         ``.states`` — ``list[State]`` matching the fields (pass to a callback).
         ``.build_kwargs(values)`` — reconstruct a ``dict`` from callback values.
         ``.register_populate_callback(open_input)`` — wire hook defaults on open.
@@ -686,13 +692,15 @@ def build_config(
     else:
         outer_style = {"display": "flex", "flexDirection": "column", "gap": "8px"}
 
-    div = html.Div(
-        children=[
+    return Config(
+        [
             dcc.Store(id=f"_dft_dirty_{config_id}", data={}),
             html.Div(style=outer_style, children=children),
-        ]
+        ],
+        states,
+        fields,
+        config_id,
     )
-    return Config(div, states, fields, config_id)
 
 
 # --- internals ---
