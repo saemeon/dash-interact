@@ -1258,6 +1258,10 @@ def _to_widget_value(f: _Field, val: Any) -> Any:
         return json.dumps(val, indent=2) if val is not None else ""
     if f.type == "path":
         return str(val) if val is not None else ""
+    if f.type == "int":
+        return val if val is not None else 0
+    if f.type == "float":
+        return val if val is not None else 0.0
     return val if val is not None else ""
 
 
@@ -1398,13 +1402,21 @@ def _coerce(f: _Field, value: Any) -> Any:
 
     empty = value is None or value == "" or value == []
     if empty:
-        return None if f.optional else f.default
+        if f.optional:
+            return None
+        if f.default is not None:
+            return f.default
+        if f.type == "int":
+            return 0
+        if f.type == "float":
+            return 0.0
+        return f.default
 
     try:
         if f.type == "date":
             return date.fromisoformat(value)
         if f.type == "int":
-            return int(value)
+            return int(float(value))
         if f.type == "float":
             return float(value)
         if f.type == "list":

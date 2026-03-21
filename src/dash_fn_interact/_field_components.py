@@ -187,16 +187,21 @@ def make_dcc_field(config_id: str, f: Any, spec: Field, fid: str) -> Any:
                 **_persist(spec),
             )
             return html.Div(slider, style=spec.style) if spec.style else slider
+        zero: int | float = 0 if f.type == "int" else 0.0
+        bounds: dict = {}
+        if spec.min is not None:
+            bounds["min"] = spec.min
+        if spec.max is not None:
+            bounds["max"] = spec.max
         return dcc.Input(
             id=fid,
             type="number",
             step=step,
-            value=f.default,
-            min=spec.min,
-            max=spec.max,
+            value=f.default if f.default is not None else zero,
             debounce=_debounce(spec),
             style=spec.style,
             className=spec.class_name,
+            **bounds,
             **_persist(spec),
         )
     if f.type in ("list", "tuple"):
@@ -333,14 +338,19 @@ def make_dmc_field(config_id: str, f: Any, spec: Field, fid: str) -> Any:
                 style=spec.style,
                 className=spec.class_name,
             )
+        zero_dmc: int | float = 0 if f.type == "int" else 0.0
+        bounds_dmc: dict = {}
+        if spec.min is not None:
+            bounds_dmc["min"] = spec.min
+        if spec.max is not None:
+            bounds_dmc["max"] = spec.max
         return dmc.NumberInput(
             id=fid,
-            value=f.default if f.default is not None else "",
-            min=spec.min,
-            max=spec.max,
+            value=f.default if f.default is not None else zero_dmc,
             step=step,
             style=spec.style,
             className=spec.class_name,
+            **bounds_dmc,
         )
 
     if f.type == "literal":
@@ -460,16 +470,21 @@ def make_dbc_field(config_id: str, f: Any, spec: Field, fid: str) -> Any:
                 **_persist(spec),
             )
             return html.Div(slider, style=spec.style) if spec.style else slider
+        zero_dbc: int | float = 0 if f.type == "int" else 0.0
+        bounds_dbc: dict = {}
+        if spec.min is not None:
+            bounds_dbc["min"] = spec.min
+        if spec.max is not None:
+            bounds_dbc["max"] = spec.max
         return dbc.Input(
             id=fid,
             type="number",
-            value=f.default,
-            min=spec.min,
-            max=spec.max,
+            value=f.default if f.default is not None else zero_dbc,
             step=step,
             debounce=_debounce(spec),
             style=spec.style,
             className=spec.class_name,
+            **bounds_dbc,
             **_persist(spec),
         )
 
