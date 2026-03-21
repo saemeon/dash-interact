@@ -33,7 +33,6 @@ from dash_fn_interact._spec import Field, FieldHook, _FieldFixed
 _registered_config_ids: set[str] = set()
 
 
-# --- FieldRef ---
 
 
 class FieldRef:
@@ -88,7 +87,6 @@ class FieldRef:
         return hash(self._component_id)
 
 
-# --- field descriptor ---
 
 
 @dataclass
@@ -102,7 +100,6 @@ class _Field:
     # spec is None until _resolve_spec is called in Config.__init__
 
 
-# --- Form ---
 
 
 class Form(html.Div):
@@ -692,10 +689,12 @@ class Form(html.Div):
         return fields
 
 
-# --- FnForm ---
 
 
 class FnForm(Form):
+    if TYPE_CHECKING:
+        _fn: Callable
+
     """Build a form by introspecting a typed callable's signature.
 
     Parameters
@@ -837,9 +836,36 @@ class FnForm(Form):
             _field_components=_field_components,
             _description=description,
         )
+        object.__setattr__(self, "_fn", fn)
+
+    def call(self, values: tuple) -> tuple[Any, dict[str, str]]:
+        """Validate *values* and call the wrapped function.
+
+        Returns ``(result, errors)``.  If validation fails, ``result`` is
+        ``None`` and ``errors`` maps field names to error messages.  On
+        success, ``errors`` is ``{}``.
+
+        Example::
+
+            @app.callback(
+                Output("result", "children"),
+                *cfg.validation_outputs,
+                Input("apply", "n_clicks"),
+                *cfg.states,
+            )
+            def on_apply(_n, *values):
+                result, errors = cfg.call(values)
+                if errors:
+                    return dash.no_update, *cfg.invalid_outputs(errors)
+                return str(result), *cfg.invalid_outputs({})
+        """
+        kwargs, errors = self.build_kwargs_validated(values)
+        if errors:
+            return None, errors
+        fn = object.__getattribute__(self, "_fn")
+        return fn(**kwargs), {}
 
 
-# --- internals ---
 
 
 def field_id(config_id: str, name: str) -> str:

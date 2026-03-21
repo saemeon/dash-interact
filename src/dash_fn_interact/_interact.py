@@ -10,7 +10,7 @@ from typing import Any
 
 from dash import Input, Output, State, callback, dcc, html
 
-from dash_fn_interact._config_builder import FnForm
+from dash_fn_interact._forms import FnForm
 
 
 def interact(
