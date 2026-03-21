@@ -25,6 +25,7 @@ from dash import Dash, html
 from dash_fn_interact.fn_interact import build_fn_panel
 from dash_fn_interact.utils import _caller_name, _in_jupyter
 
+import dash_interact.html as _html_factories
 from dash_interact._page_manager import _PageManager
 from dash_interact.html import *  # noqa: F401, F403 — exposes page.H1, page.P, etc.
 from dash_interact.interact import interact as interact  # noqa: F401
@@ -149,14 +150,12 @@ class Page(html.Div):
         d = object.__getattribute__(self, "__dict__")
         if d.get("_in_serialization"):
             raise AttributeError(name)
-        html_cls = getattr(html, name, None)
-        if html_cls is not None:
+        factory = getattr(_html_factories, name, None)
+        if factory is not None:
 
             def _factory(*args: Any, **kwargs: Any) -> Any:
                 _PageManager.activate(self)
-                comp = html_cls(*args, **kwargs)
-                self.children.append(comp)
-                return comp
+                return factory(*args, **kwargs)
 
             return _factory
         raise AttributeError(f"Page has no attribute {name!r}")
