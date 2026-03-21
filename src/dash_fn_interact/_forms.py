@@ -269,6 +269,47 @@ class Form(html.Div):
         object.__setattr__(self, "_form_validator", _validator)
 
     @property
+    def named_states(self) -> dict[str, State]:
+        """Field name → Dash ``State``, for use with flexible callback signatures.
+
+        In Dash, ``State`` means: *read this component's value when the callback
+        fires, but don't trigger it*.  ``Input`` triggers; ``State`` just provides
+        a snapshot.  ``cfg.states`` is the flat list; ``cfg.named_states`` is the
+        same data as a ``{name: State}`` dict.
+
+        With Dash's ``inputs=dict(...)`` syntax (Dash 2.0+), the dict keys become
+        the callback's keyword argument names — enabling ``**values`` unpacking::
+
+            @app.callback(
+                Output("out", "children"),
+                inputs=dict(n=Input("apply", "n_clicks"), **cfg.named_states),
+            )
+            def on_apply(n, **values):
+                result, errors = cfg.call_named(**values)
+                return str(result) if not errors else str(errors)
+
+        For ``datetime`` fields two keys are emitted: ``name`` (date part) and
+        ``name_time`` (HH:MM part).  Pass both in the callback and they will be
+        picked up correctly by :meth:`call_named` / :meth:`_named_to_values`.
+        """
+        config_id = object.__getattribute__(self, "_config_id")
+        fields = object.__getattribute__(self, "_fields")
+        result: dict[str, State] = {}
+        for f in fields:
+            fid = _field_id(config_id, f)
+            spec = f.spec
+            if spec and spec.component is not None:
+                result[f.name] = State(fid, spec.component_prop)
+            elif f.type == "datetime":
+                result[f.name] = State(fid, "date")
+                result[f"{f.name}_time"] = State(_time_field_id(config_id, f), "value")
+            elif f.type == "date":
+                result[f.name] = State(fid, "date")
+            else:
+                result[f.name] = State(fid, "value")
+        return result
+
+    @property
     def dirty_states(self) -> list[State]:
         """A single ``State`` for the dirty-tracking store.
 
@@ -391,6 +432,21 @@ class Form(html.Div):
         result = _build_kwargs(self._fields, values)
         result.update(self._fixed_values)
         return result
+
+    def _named_to_values(self, raw: dict[str, Any]) -> tuple:
+        """Convert a name→raw-value dict (from :attr:`named_states`) to a positional tuple.
+
+        Datetime fields expect two consecutive entries: the date value under the field
+        name and the time value under ``{name}_time``.
+        """
+        values = []
+        for f in self._fields:
+            if f.type == "datetime":
+                values.append(raw.get(f.name))
+                values.append(raw.get(f"{f.name}_time"))
+            else:
+                values.append(raw.get(f.name))
+        return tuple(values)
 
     def build_kwargs_validated(self, values: tuple) -> tuple[dict, dict[str, str]]:
         """Like :meth:`build_kwargs` but also validates each field.
@@ -922,6 +978,23 @@ class FnForm(Form):
             return None, errors
         fn = object.__getattribute__(self, "_fn")
         return fn(**kwargs), {}
+
+    def call_named(self, **raw: Any) -> tuple[Any, dict[str, str]]:
+        """Like :meth:`call` but accepts field values as keyword arguments.
+
+        Designed for use with :attr:`named_states` and Dash's flexible
+        ``inputs=dict(...)`` callback signature, where field values arrive as
+        named kwargs rather than a positional tuple::
+
+            @app.callback(
+                Output("result", "children"),
+                inputs=dict(n=Input("apply", "n_clicks"), **cfg.named_states),
+            )
+            def on_apply(n, **values):
+                result, errors = cfg.call_named(**values)
+                return str(result) if not errors else str(errors)
+        """
+        return self.call(self._named_to_values(raw))
 
 
 
