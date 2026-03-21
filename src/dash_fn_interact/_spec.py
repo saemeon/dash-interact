@@ -77,7 +77,7 @@ def fixed(value: Any) -> _FieldFixed:
 
     Example::
 
-        cfg = build_config("render", fn, fig=fixed(current_figure))
+        cfg = FnForm("render", fn, fig=fixed(current_figure))
         # "fig" has no widget; build_kwargs always returns {"fig": current_figure, ...}
 
         panel = interact(fn, context=fixed(some_value))
@@ -90,16 +90,16 @@ def fixed(value: Any) -> _FieldFixed:
 
 @dataclass
 class Field:
-    """Per-field configuration for :func:`~dash_fn_interact.build_config`.
+    """Per-field configuration for :class:`~dash_fn_interact.FnForm`.
 
     Can be supplied in three ways (highest priority wins):
 
     1. **In-signature** via ``Annotated[T, Field(...)]`` — for functions
        you own.
     2. **External** via keyword argument on
-       :func:`~dash_fn_interact.build_config` — for functions you don't own.
+       :class:`~dash_fn_interact.FnForm` — for functions you don't own.
     3. Type-level ``_styles`` / ``_class_names`` dicts on
-       :func:`~dash_fn_interact.build_config` fill in any visual properties
+       :class:`~dash_fn_interact.FnForm` fill in any visual properties
        not set by the above.
 
     A :class:`FieldHook` instance may also be passed directly as a kwarg

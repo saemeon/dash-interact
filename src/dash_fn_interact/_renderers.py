@@ -121,9 +121,8 @@ def to_component(result: Any, renderer: Callable[[Any], Any] | None) -> Any:
             return _dataframe_to_component(result)
 
     # Built-in: matplotlib Figure → base64 PNG image
-    if "matplotlib.figure" in sys.modules:
-        if isinstance(result, sys.modules["matplotlib.figure"].Figure):
-            return _matplotlib_to_img(result)
+    if "matplotlib.figure" in sys.modules and isinstance(result, sys.modules["matplotlib.figure"].Figure):
+        return _matplotlib_to_img(result)
 
     # Fallback: repr
     return html.Pre(
