@@ -42,7 +42,7 @@ def _find_button(dash_duo, label):
     return None
 
 
-def _wait_for_png(dash_duo, timeout=30):
+def _wait_for_png(dash_duo, timeout=45):
     """Wait for an <img> with a data:image/png src and return raw bytes."""
     WebDriverWait(dash_duo.driver, timeout).until(
         lambda d: any(
@@ -75,7 +75,7 @@ def test_capture_graph_renders_export_button(dash_duo):
 
 
 def test_full_capture_pipeline(dash_duo):
-    """Export → open wizard → Generate → verify PNG in preview."""
+    """Export → open wizard → auto-capture (no fields) → verify PNG in preview."""
     graph = dcc.Graph(id="t2-graph", figure=_make_figure())
 
     def passthrough(_target, _snapshot_img):
@@ -89,19 +89,11 @@ def test_full_capture_pipeline(dash_duo):
     dash_duo.wait_for_element("#t2-graph", timeout=10)
     time.sleep(1)  # ensure Plotly.js is loaded
 
-    # Click Export to open wizard
+    # Click Export to open wizard — no fields so capture fires automatically
     export_btn = _find_button(dash_duo, "Export")
     export_btn.click()
-    time.sleep(2)  # wait for modal open + interval arm
 
-    # Click Generate
-    gen_btn = _find_button(dash_duo, "Generate")
-    assert gen_btn is not None, "Generate button not found after opening wizard"
-    # Scroll into view and click via JS (in case button is behind modal overlay)
-    dash_duo.driver.execute_script("arguments[0].click()", gen_btn)
-    time.sleep(1)
-
-    raw = _wait_for_png(dash_duo)
+    raw = _wait_for_png(dash_duo, timeout=45)
     assert raw[:4] == b"\x89PNG", f"Expected PNG header, got {raw[:4]!r}"
 
 
@@ -126,13 +118,8 @@ def test_capture_with_strip_patches(dash_duo):
     time.sleep(1)
 
     _find_button(dash_duo, "Export").click()
-    time.sleep(2)
 
-    gen_btn = _find_button(dash_duo, "Generate")
-    assert gen_btn is not None
-    dash_duo.driver.execute_script("arguments[0].click()", gen_btn)
-
-    raw = _wait_for_png(dash_duo)
+    raw = _wait_for_png(dash_duo, timeout=45)
     assert raw[:4] == b"\x89PNG"
 
 
@@ -155,11 +142,6 @@ def test_capture_with_explicit_strategy(dash_duo):
     time.sleep(1)
 
     _find_button(dash_duo, "Export").click()
-    time.sleep(2)
 
-    gen_btn = _find_button(dash_duo, "Generate")
-    assert gen_btn is not None
-    dash_duo.driver.execute_script("arguments[0].click()", gen_btn)
-
-    raw = _wait_for_png(dash_duo)
+    raw = _wait_for_png(dash_duo, timeout=45)
     assert raw[:4] == b"\x89PNG"

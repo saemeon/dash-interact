@@ -25,6 +25,7 @@ class TestCaptureStrategy:
         s = CaptureStrategy()
         assert s.preprocess is None
         assert s.capture == ""
+        assert s.format == "png"
 
     def test_custom_js(self):
         s = CaptureStrategy(
@@ -33,6 +34,10 @@ class TestCaptureStrategy:
         )
         assert "background" in s.preprocess
         assert "toDataURL" in s.capture
+
+    def test_custom_format(self):
+        s = CaptureStrategy(format="jpeg")
+        assert s.format == "jpeg"
 
 
 # ---------------------------------------------------------------------------
@@ -117,6 +122,18 @@ class TestPlotlyStrategy:
         s = plotly_strategy(strip_title=True, _params={})
         assert "capture_width" not in s.preprocess
 
+    def test_format_default_png(self):
+        s = plotly_strategy()
+        assert s.format == "png"
+
+    def test_format_jpeg(self):
+        s = plotly_strategy(format="jpeg")
+        assert s.format == "jpeg"
+
+    def test_format_svg(self):
+        s = plotly_strategy(format="svg")
+        assert s.format == "svg"
+
 
 class TestHtml2canvasStrategy:
     def test_capture_js(self):
@@ -129,6 +146,18 @@ class TestHtml2canvasStrategy:
         s = html2canvas_strategy()
         assert "not loaded" in s.capture
 
+    def test_format_default_png(self):
+        s = html2canvas_strategy()
+        assert s.format == "png"
+
+    def test_format_jpeg(self):
+        s = html2canvas_strategy(format="jpeg")
+        assert s.format == "jpeg"
+
+    def test_capture_uses_mime_from_opts(self):
+        s = html2canvas_strategy()
+        assert "opts.format" in s.capture
+
 
 class TestCanvasStrategy:
     def test_capture_js(self):
@@ -136,6 +165,14 @@ class TestCanvasStrategy:
         assert s.preprocess is None
         assert "toDataURL" in s.capture
         assert "canvas" in s.capture.lower()
+
+    def test_format_default_png(self):
+        s = canvas_strategy()
+        assert s.format == "png"
+
+    def test_format_webp(self):
+        s = canvas_strategy(format="webp")
+        assert s.format == "webp"
 
 
 # ---------------------------------------------------------------------------
@@ -190,6 +227,63 @@ class TestBuildCaptureJs:
         assert "console.log" in js
         assert "base64,abc" in js
 
+    def test_format_in_opts(self):
+        s = plotly_strategy(format="svg")
+        js = build_capture_js("g", s, [], {})
+        assert "format: 'svg'" in js
+
+    def test_format_jpeg_in_opts(self):
+        s = html2canvas_strategy(format="jpeg")
+        js = build_capture_js("g", s, [], {})
+        assert "format: 'jpeg'" in js
+
+    def test_element_id_escaping(self):
+        s = plotly_strategy()
+        js = build_capture_js("test'; alert('xss');//", s, [], {})
+        assert "alert" in js  # string is present but escaped
+        assert "\\'" in js  # single quote is escaped
+
+
+# ---------------------------------------------------------------------------
+# Batch capture
+# ---------------------------------------------------------------------------
+
+
+class TestBatchCapture:
+    def test_batch_creates_bindings(self):
+        from dash_capture import BatchBinding, capture_batch
+
+        batch = capture_batch(["g1", "g2", "g3"])
+        assert isinstance(batch, BatchBinding)
+        assert len(batch.stores) == 3
+        assert len(batch.bindings) == 3
+        assert "g1" in batch.bindings
+        assert "g2" in batch.bindings
+        assert "g3" in batch.bindings
+
+    def test_batch_store_ids_unique(self):
+        from dash_capture import capture_batch
+
+        batch = capture_batch(["a", "b"])
+        ids = [b.store_id for b in batch.bindings.values()]
+        assert len(set(ids)) == 2  # all unique
+
+    def test_batch_with_strategy(self):
+        from dash_capture import capture_batch
+
+        batch = capture_batch(
+            ["x", "y"],
+            strategy=plotly_strategy(strip_title=True),
+        )
+        assert len(batch.bindings) == 2
+
+    def test_batch_empty_list(self):
+        from dash_capture import capture_batch
+
+        batch = capture_batch([])
+        assert len(batch.stores) == 0
+        assert len(batch.bindings) == 0
+
 
 # ---------------------------------------------------------------------------
 # Import smoke test
@@ -206,7 +300,9 @@ def test_import():
     assert hasattr(dash_capture, "capture_element")
     assert hasattr(dash_capture, "capture_graph")
     assert hasattr(dash_capture, "capture_binding")
+    assert hasattr(dash_capture, "capture_batch")
     assert hasattr(dash_capture, "CaptureBinding")
+    assert hasattr(dash_capture, "BatchBinding")
     # backwards compat
     assert hasattr(dash_capture, "graph_exporter")
     assert hasattr(dash_capture, "component_exporter")
