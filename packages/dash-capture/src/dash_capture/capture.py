@@ -281,14 +281,18 @@ def _build_modal_body(
     error_id, interval_id, snapshot_store_id, has_fields,
     styles, class_names,
 ) -> html.Div:
-    # Only show Generate button if there are form fields to configure
-    action_buttons = []
-    if has_fields:
-        action_buttons.append(html.Button(
+    # Always include Generate button in DOM (callbacks reference it),
+    # but hide it when there are no form fields to configure.
+    gen_style = dict(styles.get("button") or {})
+    if not has_fields:
+        gen_style["display"] = "none"
+    action_buttons = [
+        html.Button(
             "Generate", id=generate_id,
-            style=styles.get("button"),
+            style=gen_style,
             className=class_names.get("button", ""),
-        ))
+        ),
+    ]
 
     action_buttons += [
         dcc.Download(id=download_id),
@@ -574,6 +578,7 @@ def _make_wizard(
     trigger: str | Any,
     filename: str,
     autogenerate: bool,
+    persist: bool,
     styles: dict | None,
     class_names: dict | None,
     field_specs: dict[str, Field | FieldHook] | None,
@@ -588,6 +593,17 @@ def _make_wizard(
     has_fig_data = "_fig_data" in params
     active_capture = [name for name in params if name.startswith("capture_")]
     exclude = ["_target", "_snapshot_img", "_fig_data", *active_capture]
+
+    # Apply persist=True to all fields that don't have an explicit spec
+    if persist:
+        merged_specs: dict[str, Field | FieldHook] = {}
+        for name in params:
+            if name in exclude:
+                continue
+            merged_specs[name] = Field(persist=True)
+        if field_specs:
+            merged_specs.update(field_specs)
+        field_specs = merged_specs
 
     _styles = styles or {}
     _class_names = class_names or {}
@@ -633,6 +649,7 @@ def capture_graph(
     preprocess: str | None = None,
     filename: str = "figure.png",
     autogenerate: bool = False,
+    persist: bool = True,
     styles: dict | None = None,
     class_names: dict | None = None,
     field_specs: dict[str, Field | FieldHook] | None = None,
@@ -687,7 +704,7 @@ def capture_graph(
 
     return _make_wizard(
         graph_id, renderer, strategy, preprocess, trigger, filename,
-        autogenerate, styles, class_names, field_specs, field_components,
+        autogenerate, persist, styles, class_names, field_specs, field_components,
     )
 
 
@@ -699,6 +716,7 @@ def capture_element(
     preprocess: str | None = None,
     filename: str = "capture.png",
     autogenerate: bool = False,
+    persist: bool = True,
     styles: dict | None = None,
     class_names: dict | None = None,
     field_specs: dict[str, Field | FieldHook] | None = None,
@@ -731,7 +749,7 @@ def capture_element(
 
     return _make_wizard(
         comp_id, renderer, strategy, preprocess, trigger, filename,
-        autogenerate, styles, class_names, field_specs, field_components,
+        autogenerate, persist, styles, class_names, field_specs, field_components,
     )
 
 
