@@ -1,0 +1,41 @@
+[project]
+name = "gallery-viewer"
+dynamic = ["version"]
+description = "Configurable versioned script gallery dashboard for Dash — browse, edit, and execute data visualization scripts"
+keywords = ["dash", "gallery", "viewer", "matplotlib", "versioning"]
+classifiers = [
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Operating System :: OS Independent",
+]
+readme = "README.md"
+license = "MIT"
+authors = [
+    { name = "Simon Niederberger", email = "s.niederberger@hotmail.com" },
+]
+requires-python = ">=3.10"
+dependencies = [
+    "dash>=2.17",
+    "dash-bootstrap-components>=1.6",
+    "pandas>=2.0",
+    "pyarrow>=14.0",
+]
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel", "setuptools-scm>=8.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+root = "../.."
+write_to = "packages/gallery-viewer/src/gallery_viewer/_version.py"
+version_scheme = "post-release"
+local_scheme = "no-local-version"
+
+[tool.setuptools.dynamic]
+version = { attr = "gallery_viewer._version.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
