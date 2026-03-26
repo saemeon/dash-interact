@@ -22,19 +22,18 @@ from typing import Any, cast
 
 import dash
 from dash import Input, Output, State, dcc, html
-
 from dash_fn_forms import Field, FieldHook, FnForm, FromComponent, field_id
+
 from dash_capture._ids import id_generator
 from dash_capture.dropdown import build_dropdown
 from dash_capture.strategies import (
-    CaptureStrategy,
     _HTML2CANVAS_CAPTURE,
+    CaptureStrategy,
     build_capture_js,
     html2canvas_strategy,
     plotly_strategy,
 )
 from dash_capture.wizard import build_wizard
-
 
 # ---------------------------------------------------------------------------
 # FromPlotly hook
@@ -72,6 +71,7 @@ def _make_snapshot_fn(img_b64: str) -> Callable[[], bytes]:
     def _snapshot_img() -> bytes:
         b64 = img_b64.split(",", 1)[1]
         return base64.b64decode(b64)
+
     return _snapshot_img
 
 
@@ -278,9 +278,18 @@ def capture_batch(
 
 
 def _build_modal_body(
-    config_div, generate_id, download_id, preview_id, copy_id,
-    error_id, interval_id, snapshot_store_id, format_id, has_fields,
-    styles, class_names,
+    config_div,
+    generate_id,
+    download_id,
+    preview_id,
+    copy_id,
+    error_id,
+    interval_id,
+    snapshot_store_id,
+    format_id,
+    has_fields,
+    styles,
+    class_names,
 ) -> html.Div:
     # Always include Generate button in DOM (callbacks reference it),
     # but hide it when there are no form fields to configure.
@@ -311,7 +320,8 @@ def _build_modal_body(
 
     action_buttons = [
         html.Button(
-            "Generate", id=generate_id,
+            "Generate",
+            id=generate_id,
             style=gen_style,
             className=class_names.get("button", ""),
         ),
@@ -319,18 +329,23 @@ def _build_modal_body(
 
     action_buttons += [
         dcc.Download(id=download_id),
-        html.Div(style={"display": "flex", "gap": "4px"}, children=[
-            html.Button(
-                "Download", id=f"{download_id}_btn",
-                style=styles.get("button"),
-                className=class_names.get("button", ""),
-            ),
-            html.Button(
-                "Copy", id=copy_id,
-                style=styles.get("button"),
-                className=class_names.get("button", ""),
-            ),
-        ]),
+        html.Div(
+            style={"display": "flex", "gap": "4px"},
+            children=[
+                html.Button(
+                    "Download",
+                    id=f"{download_id}_btn",
+                    style=styles.get("button"),
+                    className=class_names.get("button", ""),
+                ),
+                html.Button(
+                    "Copy",
+                    id=copy_id,
+                    style=styles.get("button"),
+                    className=class_names.get("button", ""),
+                ),
+            ],
+        ),
     ]
 
     return html.Div(
@@ -338,8 +353,10 @@ def _build_modal_body(
         children=[
             html.Div(
                 style={
-                    "display": "flex", "flexDirection": "column",
-                    "gap": "8px", "minWidth": "160px",
+                    "display": "flex",
+                    "flexDirection": "column",
+                    "gap": "8px",
+                    "minWidth": "160px",
                 },
                 children=[config_div, format_selector, *action_buttons],
             ),
@@ -357,8 +374,11 @@ def _build_modal_body(
                 ],
             ),
             dcc.Interval(
-                id=interval_id, interval=500,
-                n_intervals=0, max_intervals=1, disabled=True,
+                id=interval_id,
+                interval=500,
+                n_intervals=0,
+                max_intervals=1,
+                disabled=True,
             ),
             dcc.Store(id=snapshot_store_id),
         ],
@@ -402,10 +422,12 @@ def _wire_wizard(
         menu_id,
         trigger_label="···",
         close_inputs=[Input(restore_id, "n_clicks")],
-        styles=styles, class_names=class_names,
+        styles=styles,
+        class_names=class_names,
         children=[
             html.Button(
-                "Reset to defaults", id=restore_id,
+                "Reset to defaults",
+                id=restore_id,
                 style=styles.get("button"),
                 className=class_names.get("button", ""),
             ),
@@ -415,21 +437,32 @@ def _wire_wizard(
                 value=["auto"] if autogenerate else [],
                 style={"padding": "4px 8px"},
                 labelStyle={
-                    k: v for k, v in (styles.get("label") or {}).items()
-                    if k == "color"
+                    k: v for k, v in (styles.get("label") or {}).items() if k == "color"
                 },
             ),
         ],
     )
 
     body = _build_modal_body(
-        config, generate_id, download_id, preview_id, copy_id,
-        error_id, interval_id, snapshot_store_id, format_id, has_fields,
-        styles, class_names,
+        config,
+        generate_id,
+        download_id,
+        preview_id,
+        copy_id,
+        error_id,
+        interval_id,
+        snapshot_store_id,
+        format_id,
+        has_fields,
+        styles,
+        class_names,
     )
 
     wizard = build_wizard(
-        wizard_id, body, trigger=trigger, title="Capture",
+        wizard_id,
+        body,
+        trigger=trigger,
+        title="Capture",
         header_actions=menu,
         dialog_style=styles.get("dialog"),
         dialog_class_name=class_names.get("dialog", ""),
@@ -476,7 +509,8 @@ def _wire_wizard(
             Output(preview_id, "src"),
             Output(error_id, "children"),
             Input(snapshot_store_id, "data"),
-            *_fig_states, *config.states,
+            *_fig_states,
+            *config.states,
             prevent_initial_call=True,
         )
         def generate_preview(_img_b64, *args):
@@ -488,9 +522,11 @@ def _wire_wizard(
                 fig_data, field_values = {}, args
             kwargs = config.build_kwargs(tuple(field_values))
             try:
-                return _to_src(_call_renderer(
-                    renderer, has_fig_data, True, fig_data, _img_b64, kwargs
-                )), ""
+                return _to_src(
+                    _call_renderer(
+                        renderer, has_fig_data, True, fig_data, _img_b64, kwargs
+                    )
+                ), ""
             except Exception as e:
                 return dash.no_update, f"Error: {e}"
     else:
@@ -514,15 +550,16 @@ def _wire_wizard(
                 _fig_data, field_values = {}, args
             kwargs = config.build_kwargs(tuple(field_values))
             try:
-                return _to_src(_call_renderer(
-                    renderer, has_fig_data, False, _fig_data, "", kwargs
-                )), ""
+                return _to_src(
+                    _call_renderer(renderer, has_fig_data, False, _fig_data, "", kwargs)
+                ), ""
             except Exception as e:
                 return dash.no_update, f"Error: {e}"
 
     _fig_states_ag = [State(element_id, "figure")] if has_fig_data else []
 
     if config.states:
+
         @dash.callback(
             Output(preview_id, "src", allow_duplicate=True),
             *[Input(s.component_id, s.component_property) for s in config.states],
@@ -542,9 +579,16 @@ def _wire_wizard(
             if has_snapshot and not _img_b64:
                 return dash.no_update
             kwargs = config.build_kwargs(tuple(field_values))
-            return _to_src(_call_renderer(
-                renderer, has_fig_data, has_snapshot, _fig_data, _img_b64 or "", kwargs
-            ))
+            return _to_src(
+                _call_renderer(
+                    renderer,
+                    has_fig_data,
+                    has_snapshot,
+                    _fig_data,
+                    _img_b64 or "",
+                    kwargs,
+                )
+            )
 
     _fig_states_dl = [State(element_id, "figure")] if has_fig_data else []
 
@@ -641,24 +685,51 @@ def _make_wizard(
     _class_names = class_names or {}
 
     uid = id_generator(element_id)
-    ids = {k: f"_dcap_{k}_{uid}" for k in (
-        "cfg", "wiz", "preview", "generate", "download", "copy",
-        "error", "interval", "restore", "menu", "autogen", "snapshot", "format",
-    )}
+    ids = {
+        k: f"_dcap_{k}_{uid}"
+        for k in (
+            "cfg",
+            "wiz",
+            "preview",
+            "generate",
+            "download",
+            "copy",
+            "error",
+            "interval",
+            "restore",
+            "menu",
+            "autogen",
+            "snapshot",
+            "format",
+        )
+    }
 
     config = FnForm(
-        ids["cfg"], renderer,
-        _styles=_styles, _class_names=_class_names,
-        _field_specs=field_specs, _show_docstring=False,
-        _exclude=exclude, _field_components=field_components,
+        ids["cfg"],
+        renderer,
+        _styles=_styles,
+        _class_names=_class_names,
+        _field_specs=field_specs,
+        _show_docstring=False,
+        _exclude=exclude,
+        _field_components=field_components,
     )
 
     return _wire_wizard(
-        element_id=element_id, strategy=strategy, renderer=renderer,
-        config=config, has_snapshot=has_snapshot, has_fig_data=has_fig_data,
-        active_capture=active_capture, params=params, ids=ids,
-        trigger=trigger, filename=filename, autogenerate=autogenerate,
-        styles=_styles, class_names=_class_names,
+        element_id=element_id,
+        strategy=strategy,
+        renderer=renderer,
+        config=config,
+        has_snapshot=has_snapshot,
+        has_fig_data=has_fig_data,
+        active_capture=active_capture,
+        params=params,
+        ids=ids,
+        trigger=trigger,
+        filename=filename,
+        autogenerate=autogenerate,
+        styles=_styles,
+        class_names=_class_names,
     )
 
 
@@ -721,6 +792,7 @@ def capture_graph(
     """
     if renderer is _UNSET:
         from dash_capture.mpl import snapshot_renderer
+
         renderer = snapshot_renderer
 
     graph_id = graph if isinstance(graph, str) else cast(Any, graph).id
@@ -728,15 +800,28 @@ def capture_graph(
     if strategy is None:
         params = inspect.signature(renderer).parameters
         strategy = plotly_strategy(
-            strip_title=strip_title, strip_legend=strip_legend,
-            strip_annotations=strip_annotations, strip_axis_titles=strip_axis_titles,
-            strip_colorbar=strip_colorbar, strip_margin=strip_margin,
+            strip_title=strip_title,
+            strip_legend=strip_legend,
+            strip_annotations=strip_annotations,
+            strip_axis_titles=strip_axis_titles,
+            strip_colorbar=strip_colorbar,
+            strip_margin=strip_margin,
             _params=params,
         )
 
     return _make_wizard(
-        graph_id, renderer, strategy, preprocess, trigger, filename,
-        autogenerate, persist, styles, class_names, field_specs, field_components,
+        graph_id,
+        renderer,
+        strategy,
+        preprocess,
+        trigger,
+        filename,
+        autogenerate,
+        persist,
+        styles,
+        class_names,
+        field_specs,
+        field_components,
     )
 
 
@@ -772,6 +857,7 @@ def capture_element(
     """
     if renderer is _UNSET:
         from dash_capture.mpl import snapshot_renderer
+
         renderer = snapshot_renderer
 
     comp_id = component if isinstance(component, str) else cast(Any, component).id
@@ -780,13 +866,24 @@ def capture_element(
         strategy = html2canvas_strategy()
 
     wizard = _make_wizard(
-        comp_id, renderer, strategy, preprocess, trigger, filename,
-        autogenerate, persist, styles, class_names, field_specs, field_components,
+        comp_id,
+        renderer,
+        strategy,
+        preprocess,
+        trigger,
+        filename,
+        autogenerate,
+        persist,
+        styles,
+        class_names,
+        field_specs,
+        field_components,
     )
 
     # Auto-include vendored html2canvas.min.js if using html2canvas strategy
     if getattr(strategy, "capture", "") == _HTML2CANVAS_CAPTURE:
         from dash_capture._html2canvas import ensure_html2canvas
+
         return html.Div(ensure_html2canvas([wizard]))
 
     return wizard
