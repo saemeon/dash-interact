@@ -13,7 +13,8 @@ License: MIT + file LICENSE
 URL: https://github.com/saemeon/dash-interact
 Imports:
     ggplot2,
-    grid
+    grid,
+    S7
 Suggests:
     png,
     shiny (>= 1.7.0),

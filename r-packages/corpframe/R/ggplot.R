@@ -1,16 +1,8 @@
 # Copyright (c) Simon Niederberger.
 # Distributed under the terms of the MIT License.
 
-#' Render ggplot with corporate frame and display
-#'
-#' Internal helper: renders ggplot to PNG, applies frame via Python,
-#' then displays using the best available method.
-#'
-#' @param plot A ggplot2 object (plain, without corporate_framed_gg class).
-#' @param params List of frame parameters (title, subtitle, etc.).
 #' @keywords internal
 .render_framed <- function(plot, params) {
-  # Render ggplot to temp PNG
   tmp_in <- tempfile(fileext = ".png")
   on.exit(unlink(tmp_in), add = TRUE)
 
@@ -23,7 +15,6 @@
 
   png_bytes <- readBin(tmp_in, "raw", file.info(tmp_in)$size)
 
-  # Apply corporate frame via Python
   framed <- apply_frame(
     png_bytes,
     title = params$title %||% "",
@@ -34,17 +25,15 @@
     python = params$python
   )
 
-  # Write framed PNG
   tmp_out <- tempfile(fileext = ".png")
   writeBin(framed, tmp_out)
 
   if (requireNamespace("png", quietly = TRUE)) {
-    # Plots pane — also works inside ggsave()
     img <- png::readPNG(tmp_out)
     grid::grid.newpage()
     grid::grid.raster(img)
   } else {
-    # Viewer fallback — no png package needed
+    # Fallback: base64-encode and display in RStudio Viewer
     tmp_b64 <- tempfile(fileext = ".b64")
     on.exit(unlink(tmp_b64), add = TRUE)
     system2("base64", c("-i", shQuote(tmp_out), "-o", shQuote(tmp_b64)))
@@ -63,44 +52,40 @@
 
 #' Add a corporate frame to a ggplot
 #'
-#' Use with \code{+} to attach corporate frame parameters to a ggplot.
-#' The frame is only applied at print time, so it can be added at any
-#' position in the ggplot pipeline. Additional layers added after
-#' \code{corporate_frame()} work normally.
+#' Add with \code{+} to any ggplot. The frame is applied at print time,
+#' so position in the pipeline doesn't matter. Works with \code{print()},
+#' \code{ggsave()}, and RStudio display.
 #'
-#' Works with \code{print()} and interactive display in RStudio.
-#' When the \pkg{png} package is installed, also works with
-#' \code{ggsave()} and displays in the Plots pane.
+#' Title and subtitle are taken from \code{labs()} by default. If set in
+#' both \code{labs()} and \code{corporate_frame()}, both render (with a warning).
 #'
-#' @param title Header title. If NULL (default), uses \code{labs(title = ...)}
-#'   from the ggplot.
-#' @param subtitle Header subtitle. If NULL (default), uses
-#'   \code{labs(subtitle = ...)} from the ggplot.
+#' @param title Header title (NULL = use \code{labs(title)}).
+#' @param subtitle Header subtitle (NULL = use \code{labs(subtitle)}).
 #' @param footnotes Footer text, left-aligned.
 #' @param sources Footer text, right-aligned.
-#' @param width Plot width in inches (default 8).
-#' @param height Plot height in inches (default 5).
-#' @param dpi Resolution in DPI (default 300).
-#' @param python Path to Python executable (NULL for auto-detect).
-#' @return An object that can be added to a ggplot with \code{+}.
+#' @param width Plot width in inches.
+#' @param height Plot height in inches.
+#' @param dpi Resolution in DPI.
+#' @param python Path to Python (NULL for auto-detect).
+#' @return Object to add to a ggplot with \code{+}.
 #'
 #' @examples
 #' \dontrun{
 #' library(ggplot2)
 #'
-#' # Title from labs() — just add corporate_frame():
+#' # Title from labs():
 #' ggplot(mtcars, aes(wt, mpg)) + geom_point() +
-#'   labs(title = "Weight vs MPG", subtitle = "mtcars") +
+#'   labs(title = "Weight vs MPG") +
 #'   corporate_frame()
 #'
-#' # Or set title directly:
+#' # Title set directly:
 #' ggplot(mtcars, aes(wt, mpg)) + geom_point() +
 #'   corporate_frame(title = "Weight vs MPG")
 #'
-#' # Explicit title overrides labs():
-#' ggplot(mtcars, aes(wt, mpg)) + geom_point() +
-#'   labs(title = "Ignored") +
-#'   corporate_frame(title = "This wins")
+#' # Save to file:
+#' p <- ggplot(mtcars, aes(wt, mpg)) + geom_point() +
+#'   corporate_frame(title = "Weight vs MPG")
+#' ggsave("chart.png", p)
 #' }
 #' @export
 corporate_frame <- function(title = NULL,
@@ -111,17 +96,12 @@ corporate_frame <- function(title = NULL,
                             height = 5,
                             dpi = 300L,
                             python = NULL) {
-  params <- list(
-    title = title,
-    subtitle = subtitle,
-    footnotes = footnotes,
-    sources = sources,
-    width = width,
-    height = height,
-    dpi = dpi,
-    python = python
+  structure(
+    list(title = title, subtitle = subtitle, footnotes = footnotes,
+         sources = sources, width = width, height = height,
+         dpi = dpi, python = python),
+    class = "corporate_frame_params"
   )
-  structure(params, class = "corporate_frame_params")
 }
 
 
@@ -129,13 +109,9 @@ corporate_frame <- function(title = NULL,
 ggplot_add.corporate_frame_params <- function(object, plot, object_name) {
   attr(plot, "corporate_frame") <- object
   class(plot) <- c("corporate_framed_gg", class(plot))
-  # Apply a complete theme to fix RStudio Environment display,
-  # then re-apply user's theme so it isn't lost
-  saved_theme <- plot$theme
-  plot <- plot + ggplot2::theme_get()
-  if (length(saved_theme) > 0) {
-    plot <- plot + saved_theme
-  }
+  # S7 revalidation so RStudio's Environment pane recognizes the object
+  # (see _notes.md for details)
+  S7::validate(plot)
   plot
 }
 
@@ -144,11 +120,9 @@ ggplot_add.corporate_frame_params <- function(object, plot, object_name) {
 print.corporate_framed_gg <- function(x, ...) {
   params <- attr(x, "corporate_frame")
 
-  # Strip wrapper so rendering sees a plain ggplot
   class(x) <- setdiff(class(x), "corporate_framed_gg")
   attr(x, "corporate_frame") <- NULL
 
-  # Pull title/subtitle from labs() if not set in corporate_frame()
   if (is.null(params$title)) {
     params$title <- x$labels$title %||% ""
     x$labels$title <- NULL
