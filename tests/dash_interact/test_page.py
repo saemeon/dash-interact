@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 from dash import Dash, html
+
 from dash_interact import Page, page
 from dash_interact._page_manager import _PageManager
 

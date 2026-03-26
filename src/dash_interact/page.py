@@ -33,6 +33,116 @@ from dash_interact.interact import interact as interact  # noqa: F401
 _THIS_MODULES = {"dash_interact.page"}
 
 
+# ── Layout context managers ──────────────────────────────────────────────────
+
+
+class _Slot:
+    """Redirect page.add() into a temporary list."""
+
+    def __init__(self, target: list[Any], page: Page) -> None:
+        self._target = target
+        self._page = page
+        self._prev: list[Any] | None = None
+
+    def __enter__(self) -> _Slot:
+        self._prev = self._page._add_target
+        self._page._add_target = self._target
+        return self
+
+    def __exit__(self, *exc: object) -> None:
+        self._page._add_target = self._prev  # type: ignore[assignment]
+
+
+class _ColumnContext:
+    """Context manager for page.columns(n)."""
+
+    def __init__(self, n_cols: int, page: Page, gap: str = "24px") -> None:
+        self._columns: list[list[Any]] = [[] for _ in range(n_cols)]
+        self._page = page
+        self._gap = gap
+
+    def __getitem__(self, idx: int) -> _Slot:
+        return _Slot(self._columns[idx], self._page)
+
+    def __enter__(self) -> _ColumnContext:
+        return self
+
+    def __exit__(self, *exc: object) -> None:
+        col_children = [
+            html.Div(col, style={"flex": "1"})
+            for col in self._columns
+        ]
+        row = html.Div(col_children, style={"display": "flex", "gap": self._gap})
+        self._page.add(row)
+
+
+class _SidebarContext:
+    """Context manager for page.sidebar()."""
+
+    def __init__(self, page: Page, width: int = 300) -> None:
+        self._page = page
+        self._width = width
+        self._side: list[Any] = []
+        self._main: list[Any] = []
+
+    def __enter__(self) -> tuple[_Slot, _Slot]:
+        return _Slot(self._side, self._page), _Slot(self._main, self._page)
+
+    def __exit__(self, *exc: object) -> None:
+        sidebar_div = html.Div(self._side, style={
+            "width": f"{self._width}px",
+            "flexShrink": "0",
+        })
+        main_div = html.Div(self._main, style={"flex": "1"})
+        row = html.Div([sidebar_div, main_div], style={
+            "display": "flex",
+            "gap": "24px",
+        })
+        self._page.add(row)
+
+
+class _TabContext:
+    """A single tab slot within _TabsContext."""
+
+    def __init__(self, name: str, tabs_ctx: _TabsContext) -> None:
+        self._name = name
+        self._children: list[Any] = []
+        self._tabs_ctx = tabs_ctx
+
+    def __enter__(self) -> _TabContext:
+        self._tabs_ctx._page._add_target = self._children
+        return self
+
+    def __exit__(self, *exc: object) -> None:
+        self._tabs_ctx._tabs.append((self._name, self._children))
+        self._tabs_ctx._page._add_target = self._tabs_ctx._prev_target
+
+
+class _TabsContext:
+    """Context manager for page.tabs()."""
+
+    def __init__(self, page: Page) -> None:
+        self._page = page
+        self._tabs: list[tuple[str, list[Any]]] = []
+        self._prev_target = page._add_target
+
+    def tab(self, name: str) -> _TabContext:
+        return _TabContext(name, self)
+
+    def __enter__(self) -> _TabsContext:
+        return self
+
+    def __exit__(self, *exc: object) -> None:
+        from dash import dcc
+
+        tab_children = [
+            dcc.Tab(label=name, children=list(children))
+            for name, children in self._tabs
+        ]
+        self._page._add_target = self._prev_target
+        self._page.add(dcc.Tabs(tab_children))
+
+
 class Page(html.Div):
     """Ordered collection of interact panels — itself a Dash ``html.Div``.
 
@@ -85,6 +195,7 @@ class Page(html.Div):
                 "color": "#1a1a1a",
             },
         )
+        self._add_target = self.children
         _PageManager.activate(self)
 
     def interact(  # noqa: F811
@@ -129,13 +240,80 @@ class Page(html.Div):
             _auto_slider=self._auto_slider if _auto_slider is None else _auto_slider,
             **kwargs,
         )
-        cast("list[Any]", self.children).append(panel)
+        cast("list[Any]", self._add_target).append(panel)
         return panel
 
     def add(self, *components: Any) -> None:
         """Append arbitrary Dash components to this page."""
         _PageManager.activate(self)
-        cast("list[Any]", self.children).extend(components)
+        cast("list[Any]", self._add_target).extend(components)
+
+    def columns(self, *args: Any, **kwargs: Any) -> _ColumnContext | None:
+        """Create a multi-column layout.
+
+        Context manager usage::
+
+            with page.columns(2) as cols:
+                with cols[0]:
+                    page.H1("Left")
+                with cols[1]:
+                    page.H1("Right")
+
+        Shorthand usage::
+
+            page.columns([left_panel], [right_panel])
+        """
+        if len(args) == 1 and isinstance(args[0], int):
+            return _ColumnContext(args[0], self, **kwargs)
+        # Shorthand: pass lists of components directly
+        gap = kwargs.get("gap", "24px")
+        col_children = [
+            html.Div(list(col), style={"flex": "1"})
+            for col in args
+        ]
+        row = html.Div(col_children, style={"display": "flex", "gap": gap})
+        self.add(row)
+        return None
+
+    def sidebar(self, *, width: int = 300, **kwargs: Any) -> _SidebarContext:
+        """Create a sidebar + main layout.
+
+        Context manager usage::
+
+            with page.sidebar(width=300) as (side, main):
+                with side:
+                    page.add(form)
+                with main:
+                    page.add(output)
+        """
+        return _SidebarContext(self, width=width)
+
+    def tabs(self, *args: Any) -> _TabsContext | None:
+        """Create a tabbed layout.
+
+        Context manager usage::
+
+            with page.tabs() as t:
+                with t.tab("Analysis"):
+                    page.interact(analysis_fn)
+                with t.tab("Settings"):
+                    page.interact(settings_fn)
+
+        Shorthand usage::
+
+            page.tabs(("Tab1", [panel1]), ("Tab2", [panel2]))
+        """
+        if not args:
+            return _TabsContext(self)
+        # Shorthand
+        from dash import dcc
+
+        tab_children = [
+            dcc.Tab(label=name, children=list(children))
+            for name, children in args
+        ]
+        self.add(dcc.Tabs(tab_children))
+        return None
 
     def build_app(self, *, name: str | None = None) -> Dash:
         """Assemble and return a configured :class:`~dash.Dash` app."""
@@ -203,3 +381,18 @@ def add(*components: Any) -> None:
 def run(**kwargs: Any) -> None:
     """Build and run the current page as a Dash app."""
     _PageManager.current().run(**kwargs)
+
+
+def columns(*args: Any, **kwargs: Any) -> _ColumnContext | None:
+    """Create a multi-column layout on the current page."""
+    return _PageManager.current().columns(*args, **kwargs)
+
+
+def sidebar(**kwargs: Any) -> _SidebarContext:
+    """Create a sidebar + main layout on the current page."""
+    return _PageManager.current().sidebar(**kwargs)
+
+
+def tabs(*args: Any) -> _TabsContext | None:
+    """Create a tabbed layout on the current page."""
+    return _PageManager.current().tabs(*args)

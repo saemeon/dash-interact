@@ -8,6 +8,7 @@ from __future__ import annotations
 from dash import html
 from dash_fn_form import FnForm
 from dash_fn_form.fn_interact import FnPanel
+
 from dash_interact import interact, interactive, interactive_output
 from dash_interact._page_manager import _PageManager
 
