@@ -1,4 +1,4 @@
-"""dash-fn-forms — FnForm example (manual-callback form).
+"""dash-fn-form — FnForm example (manual-callback form).
 
 Shows the manual workflow:
   1. Define a typed function.

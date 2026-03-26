@@ -3,7 +3,7 @@
 
 """dash-interact — pyplot-style convenience layer for Dash.
 
-Re-exports the full dash-fn-forms engine plus the page/singleton API::
+Re-exports the full dash-fn-form engine plus the page/singleton API::
 
     from dash_interact import page, interact, Page
 
@@ -16,8 +16,8 @@ Re-exports the full dash-fn-forms engine plus the page/singleton API::
     page.run(debug=True)
 """
 
-# Re-export dash-fn-forms engine for users who install only dash-interact
-from dash_fn_forms import (
+# Re-export dash-fn-form engine for users who install only dash-interact
+from dash_fn_form import (
     Field,
     FieldHook,
     FieldMaker,

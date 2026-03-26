@@ -81,7 +81,7 @@ Three levels mirroring ipywidgets:
 
 ```python
 from dash_interact import interact, interactive, interactive_output
-from dash_fn_forms import FnForm
+from dash_fn_form import FnForm
 
 # 1. Fire and forget — attaches to the current page
 @interact
@@ -106,7 +106,7 @@ app.layout = html.Div([
 ## Field customization
 
 ```python
-from dash_fn_forms import Field
+from dash_fn_form import Field
 
 @page.interact(
     amplitude=(0.1, 3.0, 0.1),                    # tuple → min/max/step
@@ -158,7 +158,7 @@ Register a renderer once at startup — all `interact()` calls that return that 
 ```python
 import pandas as pd
 from dash import dash_table
-from dash_fn_forms import register_renderer
+from dash_fn_form import register_renderer
 
 register_renderer(
     pd.DataFrame,

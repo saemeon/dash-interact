@@ -20,8 +20,8 @@ A framework for packaging organizational chart standards as installable Python l
 
 | Package | Install | Description |
 |---------|---------|-------------|
-| **dash-fn-forms** | `pip install dash-fn-forms` | Generate Dash forms from typed Python function signatures. |
-| **dash-interact** | `pip install dash-interact` | pyplot-style convenience layer — `page.interact()`, HTML shorthands. Includes dash-fn-forms. |
+| **dash-fn-form** | `pip install dash-fn-form` | Generate Dash forms from typed Python function signatures. |
+| **dash-interact** | `pip install dash-interact` | pyplot-style convenience layer — `page.interact()`, HTML shorthands. Includes dash-fn-form. |
 
 ### Capture & Export
 
@@ -37,7 +37,7 @@ A framework for packaging organizational chart standards as installable Python l
 mpl-brand                    ← framework: "package your chart standards"
   └── corpframe              ← your company's implementation
 
-dash-fn-forms                ← framework: "forms from functions"
+dash-fn-form                ← framework: "forms from functions"
   ├── dash-interact          ← convenience: page API, interact()
   └── dash-capture           ← toolkit: browser capture pipeline
         └── corpframe[dash]  ← one-click corporate export

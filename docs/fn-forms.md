@@ -1,4 +1,4 @@
-# dash-fn-forms
+# dash-fn-form
 
 Headless engine for `dash-interact`. Introspects a type-hinted Python callable and builds a reactive Dash form panel.
 
@@ -7,14 +7,14 @@ Most users should install [`dash-interact`](index.md) instead — it includes th
 ## Installation
 
 ```bash
-pip install dash-fn-forms
+pip install dash-fn-form
 ```
 
 ## Usage
 
 ```python
 from dash import Dash, html
-from dash_fn_forms import build_fn_panel
+from dash_fn_form import build_fn_panel
 
 app = Dash(__name__)
 
@@ -35,28 +35,28 @@ app.run(debug=True)
 
 ### build_fn_panel
 
-::: dash_fn_forms.fn_interact.build_fn_panel
+::: dash_fn_form.fn_interact.build_fn_panel
 
 ### FnForm
 
-::: dash_fn_forms.FnForm
+::: dash_fn_form.FnForm
 
 ### Field
 
-::: dash_fn_forms.Field
+::: dash_fn_form.Field
 
 ### FieldHook
 
-::: dash_fn_forms.FieldHook
+::: dash_fn_form.FieldHook
 
 ### FromComponent
 
-::: dash_fn_forms.FromComponent
+::: dash_fn_form.FromComponent
 
 ### register_renderer
 
-::: dash_fn_forms.register_renderer
+::: dash_fn_form.register_renderer
 
 ### field_id
 
-::: dash_fn_forms.field_id
+::: dash_fn_form.field_id

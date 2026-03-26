@@ -1,4 +1,4 @@
-"""dash-fn-forms showcase.
+"""dash-fn-form showcase.
 
 Seven sections on one scrollable page:
 
@@ -498,7 +498,7 @@ def apply7(_n, *values):
 app.layout = html.Div(
     style={"fontFamily": "sans-serif", "padding": "32px", "maxWidth": "1100px"},
     children=[
-        html.H1("dash-fn-forms showcase", style={"marginBottom": "8px"}),
+        html.H1("dash-fn-form showcase", style={"marginBottom": "8px"}),
         html.P(
             "FnForm() — typed function → Dash form",
             style={"color": "#666", "marginBottom": "40px"},

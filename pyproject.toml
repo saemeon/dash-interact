@@ -21,20 +21,24 @@ maintainers = [
 ]
 requires-python = ">=3.10"
 dependencies = [
-    "dash-fn-forms",
+    "dash-fn-form",
 ]
 
 [project.urls]
 Homepage = "https://github.com/saemeon/dash-interact"
 Repository = "https://github.com/saemeon/dash-interact"
 
+[dependency-groups]
+test = ["pytest", "pytest-cov"]
+doc = ["mkdocs", "mkdocs-material", "mkdocstrings[python]", "mike"]
+dev = ["ruff", "prek", "ty", { include-group = "test" }, { include-group = "doc" }]
+
 [build-system]
 requires = ["setuptools>=61.0", "wheel", "setuptools-scm>=8.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
-root = "../.."
-write_to = "packages/dash-interact/src/dash_interact/_version.py"
+write_to = "src/dash_interact/_version.py"
 version_scheme = "post-release"
 local_scheme = "no-local-version"
 
@@ -46,3 +50,15 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 dash_interact = ["py.typed"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP", "B", "C4", "SIM", "PERF"]
+ignore = ["E203", "E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--cov=src/dash_interact --cov-report=term-missing"

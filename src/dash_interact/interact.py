@@ -7,12 +7,12 @@
     Fire and forget. Adds a panel to the current page.
 
 ``interactive``
-    Returns an embeddable :class:`~dash_fn_forms.FnPanel` you place
+    Returns an embeddable :class:`~dash_fn_form.FnPanel` you place
     yourself.  Access ``.form`` and ``.output`` to split controls and output
     into separate layout regions.
 
 ``interactive_output``
-    Fully decoupled. You supply a pre-built :class:`~dash_fn_forms.FnForm`;
+    Fully decoupled. You supply a pre-built :class:`~dash_fn_form.FnForm`;
     get back just the output ``html.Div``.  Use when controls live in a
     sidebar or modal and the output area is elsewhere in the layout::
 
@@ -31,9 +31,9 @@ from collections.abc import Callable
 from typing import Any
 
 from dash import Input, Output, callback, dcc, html
-from dash_fn_forms._forms import FnForm
-from dash_fn_forms._renderers import to_component
-from dash_fn_forms.fn_interact import FnPanel, _cached_caller, build_fn_panel
+from dash_fn_form._forms import FnForm
+from dash_fn_form._renderers import to_component
+from dash_fn_form.fn_interact import FnPanel, _cached_caller, build_fn_panel
 
 from dash_interact._page_manager import _PageManager
 
@@ -95,7 +95,7 @@ def interactive(
     """Build an embeddable interactive panel.
 
     Mirrors ipywidgets ``interactive()`` — returns a
-    :class:`~dash_fn_forms.FnPanel` you place anywhere in the layout.
+    :class:`~dash_fn_form.FnPanel` you place anywhere in the layout.
     Access ``.form`` and ``.output`` to put controls and output in different
     parts of the layout::
 
@@ -131,7 +131,7 @@ def interactive_output(
     _cache: bool = False,
     _cache_maxsize: int = 128,
 ) -> dcc.Loading | html.Div:
-    """Build a decoupled output area wired to an existing :class:`~dash_fn_forms.FnForm`.
+    """Build a decoupled output area wired to an existing :class:`~dash_fn_form.FnForm`.
 
     Mirrors ipywidgets ``interactive_output()`` — you supply the form (already
     placed in the layout), and get back just the output ``html.Div``.  The
@@ -150,7 +150,7 @@ def interactive_output(
     fn :
         The same callable used to build *form*.
     form :
-        A pre-built :class:`~dash_fn_forms.FnForm` already present in the
+        A pre-built :class:`~dash_fn_form.FnForm` already present in the
         layout.
     _loading :
         Wrap the output area in ``dcc.Loading`` (default ``True``).

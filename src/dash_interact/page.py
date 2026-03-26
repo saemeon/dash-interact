@@ -22,8 +22,8 @@ from collections.abc import Callable
 from typing import Any, cast
 
 from dash import Dash, html
-from dash_fn_forms.fn_interact import FnPanel, build_fn_panel
-from dash_fn_forms.utils import _caller_name, _in_jupyter
+from dash_fn_form.fn_interact import FnPanel, build_fn_panel
+from dash_fn_form.utils import _caller_name, _in_jupyter
 
 import dash_interact.html as _html_factories
 from dash_interact._page_manager import _PageManager

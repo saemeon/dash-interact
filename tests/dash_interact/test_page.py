@@ -138,7 +138,7 @@ def test_page_to_plotly_json_returns_dict():
 
 def test_page_to_plotly_json_no_field_ref_leakage():
     """FieldRef objects must not appear in serialized layout."""
-    from dash_fn_forms import FnForm
+    from dash_fn_form import FnForm
 
     p = _fresh_page()
 
@@ -177,7 +177,7 @@ def test_page_manual_default_false():
 
 def test_page_manual_true_propagates_to_interact():
     """Page(manual=True) makes interact panels use manual mode by default."""
-    from dash_fn_forms.fn_interact import FnPanel
+    from dash_fn_form.fn_interact import FnPanel
 
     p = _fresh_page(manual=True)
 

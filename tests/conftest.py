@@ -7,8 +7,8 @@ import pytest
 @pytest.fixture(autouse=True)
 def reset_fn_interact_globals():
     """Clear global singletons between tests to prevent cross-test pollution."""
-    from dash_fn_forms._forms import _registered_config_ids
-    from dash_fn_forms._renderers import _RENDERERS
+    from dash_fn_form._forms import _registered_config_ids
+    from dash_fn_form._renderers import _RENDERERS
 
     before_ids = set(_registered_config_ids)
     before_renderers = dict(_RENDERERS)
