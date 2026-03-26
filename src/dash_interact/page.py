@@ -69,10 +69,12 @@ class Page(html.Div):
         *,
         max_width: int = 960,
         manual: bool = False,
+        auto_slider: bool = False,
         children: list[Any] | None = None,
     ) -> None:
         self._max_width = max_width
         self._manual = manual
+        self._auto_slider = auto_slider
         super().__init__(
             children=list(children) if children is not None else [],
             style={
@@ -95,6 +97,7 @@ class Page(html.Div):
         _render: Callable[[Any], Any] | None = None,
         _cache: bool = False,
         _cache_maxsize: int = 128,
+        _auto_slider: bool | None = None,
         **kwargs: Any,
     ) -> FnPanel | Callable:
         """Add an interact panel to this page."""
@@ -110,6 +113,7 @@ class Page(html.Div):
                     _render=_render,
                     _cache=_cache,
                     _cache_maxsize=_cache_maxsize,
+                    _auto_slider=_auto_slider,
                     **kwargs,
                 )
 
@@ -122,6 +126,7 @@ class Page(html.Div):
             _render=_render,
             _cache=_cache,
             _cache_maxsize=_cache_maxsize,
+            _auto_slider=self._auto_slider if _auto_slider is None else _auto_slider,
             **kwargs,
         )
         cast("list[Any]", self.children).append(panel)

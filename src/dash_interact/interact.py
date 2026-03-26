@@ -47,6 +47,7 @@ def interact(
     _render: Callable[[Any], Any] | None = None,
     _cache: bool = False,
     _cache_maxsize: int = 128,
+    _auto_slider: bool = False,
     **kwargs: Any,
 ) -> FnPanel | Callable:
     """Add an interact panel to the current page.
@@ -77,6 +78,7 @@ def interact(
         _render=_render,
         _cache=_cache,
         _cache_maxsize=_cache_maxsize,
+        _auto_slider=_auto_slider,
         **kwargs,
     )
 
@@ -90,6 +92,7 @@ def interactive(
     _render: Callable[[Any], Any] | None = None,
     _cache: bool = False,
     _cache_maxsize: int = 128,
+    _auto_slider: bool = False,
     **kwargs: Any,
 ) -> FnPanel:
     """Build an embeddable interactive panel.
@@ -118,8 +121,34 @@ def interactive(
         _render=_render,
         _cache=_cache,
         _cache_maxsize=_cache_maxsize,
+        _auto_slider=_auto_slider,
         **kwargs,
     )
+
+
+class _InteractOptions:
+    """Configured interact factory — returned by ``interact.options()``."""
+
+    def __init__(self, **defaults: Any) -> None:
+        self._defaults = defaults
+
+    def __call__(self, fn: Callable | None = None, **kwargs: Any) -> FnPanel | Callable:
+        merged = {**self._defaults, **kwargs}
+        return interact(fn, **merged)
+
+
+def _interact_options(**defaults: Any) -> _InteractOptions:
+    """Return a configured :func:`interact` factory.
+
+    Usage::
+
+        @interact.options(_manual=True, _auto_slider=True)
+        def my_fn(x: float = 1.0): ...
+    """
+    return _InteractOptions(**defaults)
+
+
+interact.options = _interact_options  # type: ignore[attr-defined]
 
 
 def interactive_output(
