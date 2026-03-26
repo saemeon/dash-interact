@@ -10,7 +10,6 @@ copyright: "Copyright &copy; 2026 Simon Niederberger"
 
 nav:
   - dash-interact: "index.md"
-  - dash-fn-form: "fn-forms.md"
 
 theme:
   name: material
@@ -86,7 +85,7 @@ plugins:
       handlers:
         python:
           # where to look for python modules. not strictly required, but helps, if building from an arbitrary folder
-          paths: [packages/dash-interact/src, packages/dash-fn-form/src]
+          paths: [src]
           options:
             docstring_style: numpy
             docstring_section_style: spacy
