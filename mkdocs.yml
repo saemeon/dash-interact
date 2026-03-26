@@ -118,7 +118,7 @@ extra_css:
   - assets/extra.css
 
 watch:
-  - packages
+  - src
 
 remote_branch: documentation
 
