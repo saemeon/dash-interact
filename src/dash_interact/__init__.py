@@ -37,7 +37,12 @@ from dash_fn_form import (
 
 from dash_interact import html, page
 from dash_interact.html import *  # noqa: F401, F403 — exposes di.H1, di.P, etc.
-from dash_interact.interact import interact, interactive, interactive_output
+from dash_interact.interact import (
+    interact,
+    interact_manual,
+    interactive,
+    interactive_output,
+)
 from dash_interact.page import Page, add, columns, current, run, sidebar, tabs
 
 __all__ = [
@@ -48,6 +53,7 @@ __all__ = [
     "current",
     "html",
     "interact",
+    "interact_manual",
     "interactive",
     "interactive_output",
     "page",

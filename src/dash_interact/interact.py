@@ -150,6 +150,22 @@ def _interact_options(**defaults: Any) -> _InteractOptions:
 
 interact.options = _interact_options  # type: ignore[attr-defined]
 
+interact_manual = interact.options(_manual=True)
+"""Pre-configured :func:`interact` with ``_manual=True``.
+
+Adds an *Apply* button — the callback fires only when clicked,
+not on every field change. Mirrors ipywidgets ``interact_manual``.
+
+Usage::
+
+    from dash_interact import interact_manual
+
+    @interact_manual
+    def expensive(n: int = 100):
+        import time; time.sleep(2)
+        return n * n
+"""
+
 
 def interactive_output(
     fn: Callable,
