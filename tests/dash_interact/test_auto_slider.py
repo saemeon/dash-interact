@@ -1,4 +1,5 @@
 """Tests for auto-slider feature."""
+
 from dash_fn_form.fn_interact import FnPanel, _auto_slider_range, build_fn_panel
 
 
@@ -37,21 +38,28 @@ def test_auto_slider_range_zero_int():
 def test_build_fn_panel_auto_slider():
     def fn(x: float = 1.0, y: int = 5):
         pass
+
     panel = build_fn_panel(fn, _id="_t_auto_slider", _auto_slider=True)
     assert isinstance(panel, FnPanel)
 
 
 def test_build_fn_panel_auto_slider_respects_explicit():
     """User-provided shorthand takes precedence over auto-slider."""
+
     def fn(x: float = 1.0):
         pass
-    panel = build_fn_panel(fn, _id="_t_auto_explicit", _auto_slider=True, x=(0, 10, 0.5))
+
+    panel = build_fn_panel(
+        fn, _id="_t_auto_explicit", _auto_slider=True, x=(0, 10, 0.5)
+    )
     assert isinstance(panel, FnPanel)
 
 
 def test_build_fn_panel_auto_slider_false_no_slider():
     """With auto_slider=False, numeric defaults stay as number inputs."""
+
     def fn(x: float = 1.0):
         pass
+
     panel = build_fn_panel(fn, _id="_t_no_auto", _auto_slider=False)
     assert isinstance(panel, FnPanel)

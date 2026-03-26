@@ -12,20 +12,25 @@ import dash
 import pandas as pd
 import plotly.graph_objects as go
 from dash import dash_table, dcc, html
-
 from dash_capture import capture_element, capture_graph, plotly_strategy
 
 # --- sample figure ---
 fig = go.Figure(
     data=[
-        go.Scatter(x=[1, 2, 3, 4, 5], y=[2, 5, 3, 8, 4],
-                   mode="lines+markers", name="Series A"),
-        go.Scatter(x=[1, 2, 3, 4, 5], y=[1, 3, 6, 4, 7],
-                   mode="lines+markers", name="Series B"),
+        go.Scatter(
+            x=[1, 2, 3, 4, 5], y=[2, 5, 3, 8, 4], mode="lines+markers", name="Series A"
+        ),
+        go.Scatter(
+            x=[1, 2, 3, 4, 5], y=[1, 3, 6, 4, 7], mode="lines+markers", name="Series B"
+        ),
     ],
     layout=dict(
-        title="Sample Chart", xaxis_title="X", yaxis_title="Y",
-        width=700, height=400, showlegend=True,
+        title="Sample Chart",
+        xaxis_title="X",
+        yaxis_title="Y",
+        width=700,
+        height=400,
+        showlegend=True,
     ),
 )
 graph = dcc.Graph(id="demo-graph", figure=fig)
@@ -150,8 +155,10 @@ def figdata_renderer(
         text = json.dumps(_fig_data, indent=2, default=str)
     else:
         n_traces = len(_fig_data.get("data", []))
-        title = (_fig_data.get("layout", {}).get("title", {}) or {})
-        title_text = title.get("text", "(no title)") if isinstance(title, dict) else title
+        title = _fig_data.get("layout", {}).get("title", {}) or {}
+        title_text = (
+            title.get("text", "(no title)") if isinstance(title, dict) else title
+        )
         text = f"Figure: {title_text}\nTraces: {n_traces}"
 
     _target.write(text.encode())
@@ -178,12 +185,14 @@ def error_renderer(
 # ---------------------------------------------------------------------------
 
 # --- sample table ---
-df = pd.DataFrame({
-    "Country": ["Switzerland", "Germany", "France", "Italy", "Austria"],
-    "Population (M)": [8.7, 83.2, 67.4, 59.6, 9.0],
-    "GDP per capita ($)": [93_720, 51_380, 44_850, 35_550, 53_640],
-    "Life expectancy": [83.4, 80.9, 82.5, 82.9, 81.6],
-})
+df = pd.DataFrame(
+    {
+        "Country": ["Switzerland", "Germany", "France", "Italy", "Austria"],
+        "Population (M)": [8.7, 83.2, 67.4, 59.6, 9.0],
+        "GDP per capita ($)": [93_720, 51_380, 44_850, 35_550, 53_640],
+        "Life expectancy": [83.4, 80.9, 82.5, 82.9, 81.6],
+    }
+)
 
 table = dash_table.DataTable(
     id="demo-table",
@@ -208,8 +217,12 @@ app = dash.Dash(
 SECTION = {"marginBottom": "30px"}
 
 app.layout = html.Div(
-    style={"maxWidth": "900px", "margin": "0 auto", "padding": "20px",
-           "fontFamily": "system-ui, sans-serif"},
+    style={
+        "maxWidth": "900px",
+        "margin": "0 auto",
+        "padding": "20px",
+        "fontFamily": "system-ui, sans-serif",
+    },
     children=[
         html.H2("dash-capture — field type showcase"),
         html.P(
@@ -219,136 +232,214 @@ app.layout = html.Div(
         html.Hr(),
         graph,
         html.Br(),
-
         # 1. No fields
-        html.Div(style=SECTION, children=[
-            html.H4("1. No parameters → empty wizard"),
-            html.Code("def passthrough(_target, _snapshot_img)"),
-            html.Br(), html.Br(),
-            capture_graph(graph, renderer=passthrough, trigger="Capture (simple)"),
-        ]),
-
+        html.Div(
+            style=SECTION,
+            children=[
+                html.H4("1. No parameters → empty wizard"),
+                html.Code("def passthrough(_target, _snapshot_img)"),
+                html.Br(),
+                html.Br(),
+                capture_graph(graph, renderer=passthrough, trigger="Capture (simple)"),
+            ],
+        ),
         # 2. str + int
-        html.Div(style=SECTION, children=[
-            html.H4("2. str + int → text input + number input"),
-            html.Code("def renderer(_target, _snapshot_img, title: str, dpi: int)"),
-            html.Br(), html.Br(),
-            capture_graph("demo-graph", renderer=str_and_int_renderer,
-                          trigger="Capture (matplotlib)"),
-        ]),
-
+        html.Div(
+            style=SECTION,
+            children=[
+                html.H4("2. str + int → text input + number input"),
+                html.Code("def renderer(_target, _snapshot_img, title: str, dpi: int)"),
+                html.Br(),
+                html.Br(),
+                capture_graph(
+                    "demo-graph",
+                    renderer=str_and_int_renderer,
+                    trigger="Capture (matplotlib)",
+                ),
+            ],
+        ),
         # 3. Literal + bool
-        html.Div(style=SECTION, children=[
-            html.H4("3. Literal + int + bool → dropdown + number + checkbox"),
-            html.Code("def renderer(..., border_color: Literal[...], add_shadow: bool)"),
-            html.Br(), html.Br(),
-            capture_graph("demo-graph", renderer=literal_and_bool_renderer,
-                          trigger="Capture (PIL border)"),
-        ]),
-
+        html.Div(
+            style=SECTION,
+            children=[
+                html.H4("3. Literal + int + bool → dropdown + number + checkbox"),
+                html.Code(
+                    "def renderer(..., border_color: Literal[...], add_shadow: bool)"
+                ),
+                html.Br(),
+                html.Br(),
+                capture_graph(
+                    "demo-graph",
+                    renderer=literal_and_bool_renderer,
+                    trigger="Capture (PIL border)",
+                ),
+            ],
+        ),
         # 4. float
-        html.Div(style=SECTION, children=[
-            html.H4("4. float → number input with decimal step"),
-            html.Code("def renderer(..., brightness: float, contrast: float)"),
-            html.Br(), html.Br(),
-            capture_graph("demo-graph", renderer=float_renderer,
-                          trigger="Capture (brightness/contrast)"),
-        ]),
-
+        html.Div(
+            style=SECTION,
+            children=[
+                html.H4("4. float → number input with decimal step"),
+                html.Code("def renderer(..., brightness: float, contrast: float)"),
+                html.Br(),
+                html.Br(),
+                capture_graph(
+                    "demo-graph",
+                    renderer=float_renderer,
+                    trigger="Capture (brightness/contrast)",
+                ),
+            ],
+        ),
         # 5. date
-        html.Div(style=SECTION, children=[
-            html.H4("5. date → date picker"),
-            html.Code("def renderer(..., report_date: date, author: str)"),
-            html.Br(), html.Br(),
-            capture_graph("demo-graph", renderer=date_renderer,
-                          trigger="Capture (date stamp)"),
-        ]),
-
+        html.Div(
+            style=SECTION,
+            children=[
+                html.H4("5. date → date picker"),
+                html.Code("def renderer(..., report_date: date, author: str)"),
+                html.Br(),
+                html.Br(),
+                capture_graph(
+                    "demo-graph", renderer=date_renderer, trigger="Capture (date stamp)"
+                ),
+            ],
+        ),
         # 6. strip patches
-        html.Div(style=SECTION, children=[
-            html.H4("6. Strip patches — preprocess before capture"),
-            html.P("Same passthrough renderer, but Plotly title + legend are "
-                   "removed before the browser captures the image."),
-            capture_graph("demo-graph", renderer=passthrough,
-                          trigger="Capture (stripped)",
-                          strip_title=True, strip_legend=True),
-        ]),
-
+        html.Div(
+            style=SECTION,
+            children=[
+                html.H4("6. Strip patches — preprocess before capture"),
+                html.P(
+                    "Same passthrough renderer, but Plotly title + legend are "
+                    "removed before the browser captures the image."
+                ),
+                capture_graph(
+                    "demo-graph",
+                    renderer=passthrough,
+                    trigger="Capture (stripped)",
+                    strip_title=True,
+                    strip_legend=True,
+                ),
+            ],
+        ),
         # 7. _fig_data (no snapshot)
-        html.Div(style=SECTION, children=[
-            html.H4("7. _fig_data — server-side figure access (no screenshot)"),
-            html.P("Renderer receives the Plotly figure dict directly. "
-                   "No browser capture — useful for data extraction."),
-            html.Code("def renderer(_target, _fig_data, output_format: Literal[...])"),
-            html.Br(), html.Br(),
-            capture_graph("demo-graph", renderer=figdata_renderer,
-                          trigger="Capture (fig data)"),
-        ]),
-
+        html.Div(
+            style=SECTION,
+            children=[
+                html.H4("7. _fig_data — server-side figure access (no screenshot)"),
+                html.P(
+                    "Renderer receives the Plotly figure dict directly. "
+                    "No browser capture — useful for data extraction."
+                ),
+                html.Code(
+                    "def renderer(_target, _fig_data, output_format: Literal[...])"
+                ),
+                html.Br(),
+                html.Br(),
+                capture_graph(
+                    "demo-graph",
+                    renderer=figdata_renderer,
+                    trigger="Capture (fig data)",
+                ),
+            ],
+        ),
         # 8. explicit strategy
-        html.Div(style=SECTION, children=[
-            html.H4("8. Explicit strategy object"),
-            html.P("Pass a plotly_strategy() directly instead of using strip_* flags."),
-            capture_graph("demo-graph", renderer=passthrough,
-                          trigger="Capture (strategy)",
-                          strategy=plotly_strategy(
-                              strip_margin=True, strip_title=True,
-                              strip_colorbar=True,
-                          )),
-        ]),
-
+        html.Div(
+            style=SECTION,
+            children=[
+                html.H4("8. Explicit strategy object"),
+                html.P(
+                    "Pass a plotly_strategy() directly instead of using strip_* flags."
+                ),
+                capture_graph(
+                    "demo-graph",
+                    renderer=passthrough,
+                    trigger="Capture (strategy)",
+                    strategy=plotly_strategy(
+                        strip_margin=True,
+                        strip_title=True,
+                        strip_colorbar=True,
+                    ),
+                ),
+            ],
+        ),
         # 9. Table capture (html2canvas)
         html.Hr(),
         html.H3("Table capture — capture_element + html2canvas"),
-        html.P("capture_element() uses html2canvas to capture any DOM element, "
-               "not just Plotly graphs. The table below is a plain dash_table.DataTable."),
+        html.P(
+            "capture_element() uses html2canvas to capture any DOM element, "
+            "not just Plotly graphs. The table below is a plain dash_table.DataTable."
+        ),
         html.Br(),
         table,
         html.Br(),
-
-        html.Div(style=SECTION, children=[
-            html.H4("9. Table → simple capture"),
-            html.Code("capture_element('demo-table', renderer=passthrough)"),
-            html.Br(), html.Br(),
-            capture_element("demo-table", renderer=passthrough,
-                            trigger="Capture table"),
-        ]),
-
-        html.Div(style=SECTION, children=[
-            html.H4("10. Table → PIL border + title"),
-            html.P("Same border renderer from example 3, but applied to a table."),
-            capture_element("demo-table", renderer=literal_and_bool_renderer,
-                            trigger="Capture table (styled)"),
-        ]),
-
+        html.Div(
+            style=SECTION,
+            children=[
+                html.H4("9. Table → simple capture"),
+                html.Code("capture_element('demo-table', renderer=passthrough)"),
+                html.Br(),
+                html.Br(),
+                capture_element(
+                    "demo-table", renderer=passthrough, trigger="Capture table"
+                ),
+            ],
+        ),
+        html.Div(
+            style=SECTION,
+            children=[
+                html.H4("10. Table → PIL border + title"),
+                html.P("Same border renderer from example 3, but applied to a table."),
+                capture_element(
+                    "demo-table",
+                    renderer=literal_and_bool_renderer,
+                    trigger="Capture table (styled)",
+                ),
+            ],
+        ),
         # 11. Format selection
         html.Hr(),
         html.H3("Format selection"),
-        html.Div(style=SECTION, children=[
-            html.H4("11. Capture as JPEG"),
-            html.P("plotly_strategy(format='jpeg') — smaller file size, lossy."),
-            capture_graph("demo-graph", renderer=passthrough,
-                          trigger="Capture (JPEG)",
-                          strategy=plotly_strategy(format="jpeg")),
-        ]),
-
-        html.Div(style=SECTION, children=[
-            html.H4("12. Capture as SVG"),
-            html.P("plotly_strategy(format='svg') — vector format, infinite zoom."),
-            capture_graph("demo-graph", renderer=passthrough,
-                          trigger="Capture (SVG)",
-                          strategy=plotly_strategy(format="svg")),
-        ]),
-
+        html.Div(
+            style=SECTION,
+            children=[
+                html.H4("11. Capture as JPEG"),
+                html.P("plotly_strategy(format='jpeg') — smaller file size, lossy."),
+                capture_graph(
+                    "demo-graph",
+                    renderer=passthrough,
+                    trigger="Capture (JPEG)",
+                    strategy=plotly_strategy(format="jpeg"),
+                ),
+            ],
+        ),
+        html.Div(
+            style=SECTION,
+            children=[
+                html.H4("12. Capture as SVG"),
+                html.P("plotly_strategy(format='svg') — vector format, infinite zoom."),
+                capture_graph(
+                    "demo-graph",
+                    renderer=passthrough,
+                    trigger="Capture (SVG)",
+                    strategy=plotly_strategy(format="svg"),
+                ),
+            ],
+        ),
         # 13. Error display
         html.Hr(),
         html.H3("Error handling"),
-        html.Div(style=SECTION, children=[
-            html.H4("13. Renderer that raises an error"),
-            html.P("The error message is shown in red below the preview."),
-            capture_graph("demo-graph", renderer=error_renderer,
-                          trigger="Capture (error demo)"),
-        ]),
+        html.Div(
+            style=SECTION,
+            children=[
+                html.H4("13. Renderer that raises an error"),
+                html.P("The error message is shown in red below the preview."),
+                capture_graph(
+                    "demo-graph",
+                    renderer=error_renderer,
+                    trigger="Capture (error demo)",
+                ),
+            ],
+        ),
     ],
 )
 

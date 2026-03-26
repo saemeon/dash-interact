@@ -28,6 +28,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import plotly.graph_objects as go
 from dash import Dash, html
+
 from dash_interact import Field, interact
 
 matplotlib.use("Agg")  # non-interactive backend — must be set before pyplot use

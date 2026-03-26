@@ -68,10 +68,7 @@ class _ColumnContext:
         return self
 
     def __exit__(self, *exc: object) -> None:
-        col_children = [
-            html.Div(col, style={"flex": "1"})
-            for col in self._columns
-        ]
+        col_children = [html.Div(col, style={"flex": "1"}) for col in self._columns]
         row = html.Div(col_children, style={"display": "flex", "gap": self._gap})
         self._page.add(row)
 
@@ -89,15 +86,21 @@ class _SidebarContext:
         return _Slot(self._side, self._page), _Slot(self._main, self._page)
 
     def __exit__(self, *exc: object) -> None:
-        sidebar_div = html.Div(self._side, style={
-            "width": f"{self._width}px",
-            "flexShrink": "0",
-        })
+        sidebar_div = html.Div(
+            self._side,
+            style={
+                "width": f"{self._width}px",
+                "flexShrink": "0",
+            },
+        )
         main_div = html.Div(self._main, style={"flex": "1"})
-        row = html.Div([sidebar_div, main_div], style={
-            "display": "flex",
-            "gap": "24px",
-        })
+        row = html.Div(
+            [sidebar_div, main_div],
+            style={
+                "display": "flex",
+                "gap": "24px",
+            },
+        )
         self._page.add(row)
 
 
@@ -267,10 +270,7 @@ class Page(html.Div):
             return _ColumnContext(args[0], self, **kwargs)
         # Shorthand: pass lists of components directly
         gap = kwargs.get("gap", "24px")
-        col_children = [
-            html.Div(list(col), style={"flex": "1"})
-            for col in args
-        ]
+        col_children = [html.Div(list(col), style={"flex": "1"}) for col in args]
         row = html.Div(col_children, style={"display": "flex", "gap": gap})
         self.add(row)
         return None
@@ -309,8 +309,7 @@ class Page(html.Div):
         from dash import dcc
 
         tab_children = [
-            dcc.Tab(label=name, children=list(children))
-            for name, children in args
+            dcc.Tab(label=name, children=list(children)) for name, children in args
         ]
         self.add(dcc.Tabs(tab_children))
         return None

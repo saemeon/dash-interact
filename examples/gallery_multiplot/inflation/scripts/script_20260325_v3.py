@@ -5,11 +5,13 @@ smoothing: int = 1
 color_cpi: str = "#7CA3C6"
 
 # === CODE ===
-import pandas as pd
 import matplotlib
+import pandas as pd
+
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 from pathlib import Path
+
+import matplotlib.pyplot as plt
 
 BASE_DIR = Path(__file__).parent.parent
 date = "20260101"
@@ -28,8 +30,14 @@ if show_core:
     core = df["core_cpi"]
     if smoothing > 1:
         core = core.rolling(smoothing, min_periods=1).mean()
-    ax.plot(df["month"], core, linewidth=2, label="Core CPI",
-            color="#e84133", linestyle="--")
+    ax.plot(
+        df["month"],
+        core,
+        linewidth=2,
+        label="Core CPI",
+        color="#e84133",
+        linestyle="--",
+    )
 
 ax.set_title(title)
 ax.set_ylabel("Index (base=100)")

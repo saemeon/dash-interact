@@ -9,6 +9,7 @@ Usage:
 """
 
 from pathlib import Path
+
 from corpframe.gallery import corp_gallery
 
 DEMO_DIR = Path(__file__).parent.parent / "packages" / "gallery_viewer"

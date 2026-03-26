@@ -24,6 +24,7 @@ from enum import Enum
 from typing import Annotated, Literal
 
 from dash import Dash, Input, Output, dcc, html
+
 from dash_interact import Field, FnForm, FromComponent
 
 app = Dash(__name__, suppress_callback_exceptions=True)
@@ -44,7 +45,7 @@ def _to_json(kwargs: dict) -> str:
     for k, v in kwargs.items():
         if isinstance(v, Enum):
             out[k] = f"{type(v).__name__}.{v.name}  (value={v.value!r})"
-        elif isinstance(v, (datetime, date)):
+        elif isinstance(v, datetime | date):
             out[k] = v.isoformat()
         elif isinstance(v, pathlib.Path):
             out[k] = str(v)
@@ -483,7 +484,6 @@ cfg7 = FnForm("validated", validated_fn, age=(0, 120, 1))
     prevent_initial_call=True,
 )
 def apply7(_n, *values):
-
     kwargs, errors = cfg7.build_kwargs_validated(values)
     if errors:
         return (

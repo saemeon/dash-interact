@@ -57,7 +57,13 @@ target-version = "py310"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP", "B", "C4", "SIM", "PERF"]
-ignore = ["E203", "E501"]
+ignore = ["E203", "E501", "C408"]
+
+[tool.ruff.lint.per-file-ignores]
+"examples/**/scripts/*.py" = ["E402"]
+
+[tool.ty.src]
+include = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -216,7 +216,9 @@ def interactive_output(
     @callback(Output(output_id, "children"), *inputs)
     def _on_change(*values: Any) -> Any:
         try:
-            result = _call(*values) if _call is not None else fn(**form.build_kwargs(values))
+            result = (
+                _call(*values) if _call is not None else fn(**form.build_kwargs(values))
+            )
         except Exception as exc:
             return html.Pre(
                 f"Error: {exc}",

@@ -11,6 +11,7 @@ Usage:
 """
 
 from pathlib import Path
+
 from gallery_viewer import Gallery
 
 CONFIG = Path(__file__).parent / "gallery_multiplot" / "gallery.json"

@@ -130,7 +130,9 @@ def test_interactive_cache_maxsize_builds():
     def fn(x: float = 1.0):
         pass
 
-    panel = interactive(fn, _id="_t_interactive_maxsize", _cache=True, _cache_maxsize=32)
+    panel = interactive(
+        fn, _id="_t_interactive_maxsize", _cache=True, _cache_maxsize=32
+    )
     assert isinstance(panel, FnPanel)
 
 

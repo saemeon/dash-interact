@@ -22,6 +22,7 @@ from typing import Literal
 
 import numpy as np
 import plotly.graph_objects as go
+
 from dash_interact import Field, Page
 
 page = Page()

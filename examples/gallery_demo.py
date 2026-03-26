@@ -9,7 +9,8 @@ Usage:
 """
 
 from pathlib import Path
-from gallery_viewer import Gallery, FileSystemBackend
+
+from gallery_viewer import FileSystemBackend, Gallery
 
 DEMO_DIR = Path(__file__).parent.parent / "packages" / "gallery_viewer"
 
