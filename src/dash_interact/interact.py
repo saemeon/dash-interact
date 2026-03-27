@@ -38,49 +38,71 @@ from dash_fn_form.fn_interact import FnPanel, _cached_caller, build_fn_panel
 from dash_interact._page_manager import _PageManager
 
 
-def interact(
-    fn: Callable | None = None,
-    *,
-    _id: str | None = None,
-    _manual: bool | None = None,
-    _loading: bool = True,
-    _render: Callable[[Any], Any] | None = None,
-    _cache: bool = False,
-    _cache_maxsize: int = 128,
-    _auto_slider: bool = False,
-    **kwargs: Any,
-) -> FnPanel | Callable:
-    """Add an interact panel to the current page.
+class _Interact:
+    """Callable interact with an ``.options`` factory method.
 
-    Mirrors ipywidgets ``interact()`` — fire and forget.  The panel is
-    appended to the active :class:`~dash_interact.Page` and the page is
-    returned.
-
-    Can be used as a plain call, a no-arg decorator, or a decorator with
-    field shorthands::
-
-        # plain call
-        interact(sine_wave, amplitude=(0, 2, 0.1))
-
-        # no-arg decorator
-        @interact
-        def sine_wave(amplitude: float = 1.0): ...
-
-        # decorator with shorthands
-        @interact(amplitude=(0, 2, 0.1))
-        def sine_wave(amplitude: float = 1.0): ...
+    Mirrors the ipywidgets pattern where ``interact.options(...)`` returns
+    a pre-configured decorator.
     """
-    return _PageManager.current().interact(
-        fn,
-        _id=_id,
-        _manual=_manual,
-        _loading=_loading,
-        _render=_render,
-        _cache=_cache,
-        _cache_maxsize=_cache_maxsize,
-        _auto_slider=_auto_slider,
-        **kwargs,
-    )
+
+    def __call__(
+        self,
+        fn: Callable | None = None,
+        *,
+        _id: str | None = None,
+        _manual: bool | None = None,
+        _loading: bool = True,
+        _render: Callable[[Any], Any] | None = None,
+        _cache: bool = False,
+        _cache_maxsize: int = 128,
+        _auto_slider: bool = False,
+        **kwargs: Any,
+    ) -> FnPanel | Callable:
+        """Add an interact panel to the current page.
+
+        Mirrors ipywidgets ``interact()`` — fire and forget.  The panel is
+        appended to the active :class:`~dash_interact.Page` and the page is
+        returned.
+
+        Can be used as a plain call, a no-arg decorator, or a decorator with
+        field shorthands::
+
+            # plain call
+            interact(sine_wave, amplitude=(0, 2, 0.1))
+
+            # no-arg decorator
+            @interact
+            def sine_wave(amplitude: float = 1.0): ...
+
+            # decorator with shorthands
+            @interact(amplitude=(0, 2, 0.1))
+            def sine_wave(amplitude: float = 1.0): ...
+        """
+        return _PageManager.current().interact(
+            fn,
+            _id=_id,
+            _manual=_manual,
+            _loading=_loading,
+            _render=_render,
+            _cache=_cache,
+            _cache_maxsize=_cache_maxsize,
+            _auto_slider=_auto_slider,
+            **kwargs,
+        )
+
+    @staticmethod
+    def options(**defaults: Any) -> _InteractOptions:
+        """Return a configured :func:`interact` factory.
+
+        Usage::
+
+            @interact.options(_manual=True, _auto_slider=True)
+            def my_fn(x: float = 1.0): ...
+        """
+        return _InteractOptions(**defaults)
+
+
+interact = _Interact()
 
 
 def interactive(
@@ -136,19 +158,6 @@ class _InteractOptions:
         merged = {**self._defaults, **kwargs}
         return interact(fn, **merged)
 
-
-def _interact_options(**defaults: Any) -> _InteractOptions:
-    """Return a configured :func:`interact` factory.
-
-    Usage::
-
-        @interact.options(_manual=True, _auto_slider=True)
-        def my_fn(x: float = 1.0): ...
-    """
-    return _InteractOptions(**defaults)
-
-
-interact.options = _interact_options  # type: ignore[attr-defined]
 
 interact_manual = interact.options(_manual=True)
 """Pre-configured :func:`interact` with ``_manual=True``.

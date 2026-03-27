@@ -50,7 +50,8 @@ class _Slot:
         return self
 
     def __exit__(self, *exc: object) -> None:
-        self._page._add_target = self._prev  # type: ignore[assignment]
+        assert self._prev is not None
+        self._page._add_target = self._prev
 
 
 class _ColumnContext:
@@ -219,7 +220,7 @@ class Page(html.Div):
         if fn is None:
 
             def decorator(f: Callable) -> FnPanel:
-                return self.interact(  # type: ignore[return-value]
+                return self.interact(  # type: ignore[return-value, invalid-return-type]
                     f,
                     _id=_id,
                     _manual=_manual,
@@ -229,7 +230,7 @@ class Page(html.Div):
                     _cache_maxsize=_cache_maxsize,
                     _auto_slider=_auto_slider,
                     **kwargs,
-                )
+                )  # ty:ignore[invalid-return-type]
 
             return decorator
         panel = build_fn_panel(

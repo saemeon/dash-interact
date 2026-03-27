@@ -37,7 +37,8 @@ class _PageManager:
             from dash_interact.page import Page  # noqa: PLC0415
 
             Page()  # __init__ calls activate
-        return cls._page  # type: ignore[return-value]
+        assert cls._page is not None
+        return cls._page
 
     @classmethod
     def _register_jupyter_hook(cls) -> None:
@@ -45,7 +46,9 @@ class _PageManager:
             return
         cls._hook_registered = True
         try:
-            from IPython import get_ipython  # noqa: PLC0415
+            from IPython import (  # type: ignore[import-not-found]  # ty:ignore[unresolved-import]
+                get_ipython,  # noqa: PLC0415
+            )
 
             ip = get_ipython()
             if ip is not None and ip.__class__.__name__ == "ZMQInteractiveShell":
