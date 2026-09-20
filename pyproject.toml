@@ -56,15 +56,14 @@ line-length = 88
 target-version = "py310"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "N", "W", "UP", "B", "C4", "SIM", "PERF"]
+select = ["E", "F", "I", "N", "W", "UP", "B", "C4", "SIM", "RUF", "PERF", "ANN", "D"]
 ignore = ["E203", "E501", "C408"]
 
 [tool.ruff.lint.per-file-ignores]
-"examples/**/scripts/*.py" = ["E402"]
+# Annotations and docstrings are for what others import, not for tests.
+"tests/**" = ["ANN", "D"]
+"examples/**" = ["ANN", "D"]
 
-[tool.ty.src]
-include = ["src"]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-addopts = "--cov=src/dash_interact --cov-report=term-missing"
+[tool.ruff.lint.pydocstyle]
+# numpy, as mkdocstrings is told to read them.
+convention = "numpy"
