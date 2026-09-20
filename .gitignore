@@ -164,3 +164,6 @@ _local_notes.md
 dash-pydantic-form-main/
 ipywidgets/
 py-shiny/
+
+# A library resolves for its dependents, not for itself.
+uv.lock
